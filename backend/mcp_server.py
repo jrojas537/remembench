@@ -7,7 +7,7 @@ from sqlalchemy import select, and_
 from mcp.server.fastmcp import FastMCP
 from mcp.server.stdio import stdio_server
 
-from app.database import AsyncSessionLocal
+from app.database import async_session_factory
 from app.models import ImpactEvent
 
 # Create an MCP server
@@ -32,7 +32,7 @@ async def get_market_anomalies(industry: str, start_date: str, end_date: str, ma
     except ValueError:
         return "Error: Invalid date format. Must use YYYY-MM-DD."
 
-    async with AsyncSessionLocal() as db:
+    async with async_session_factory() as db:
         query = select(ImpactEvent).where(
             and_(
                 ImpactEvent.industry == industry,
@@ -69,7 +69,7 @@ async def get_anomaly_details(event_id: str) -> str:
     Args:
         event_id: The UUID string of the event retrieved from get_market_anomalies.
     """
-    async with AsyncSessionLocal() as db:
+    async with async_session_factory() as db:
         event = await db.get(ImpactEvent, event_id)
         if not event:
             return f"Error: No event found matching ID {event_id}"
