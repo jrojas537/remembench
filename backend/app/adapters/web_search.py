@@ -143,7 +143,9 @@ class WebSearchAdapter(BaseAdapter):
         events = []
         for res in raw_results:
             # We generate a deterministic source_id from URL
-            url_hash = hashlib.md5(res.get('url', '').encode()).hexdigest()[:12]
+            url_hash = hashlib.md5(
+                res.get('url', '').encode(), usedforsecurity=False
+            ).hexdigest()[:12]
             
             events.append(
                 ImpactEventCreate(
