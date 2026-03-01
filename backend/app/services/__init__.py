@@ -16,6 +16,7 @@ import asyncio
 from datetime import datetime
 
 from geoalchemy2.functions import ST_MakePoint, ST_SetSRID
+from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -227,6 +228,7 @@ class IngestionService:
                 .values(values)
                 .on_conflict_do_nothing(
                     index_elements=["source", "source_id"],
+                    index_where=text("source_id IS NOT NULL"),
                 )
             )
             result = await db.execute(stmt)
