@@ -154,13 +154,13 @@ class ImpactEvent(Base):
 
     # --- Composite Indexes ---
     # Optimized for the most common query patterns:
-    # 1. YoY lookup: industry + category + date range
+    # 1. YoY lookup: industry + date range + category (category optional)
     # 2. Market analysis: geo_label + date range
     # 3. Deduplication: source + source_id (partial unique)
     __table_args__ = (
         Index(
             "ix_impact_events_yoy_lookup",
-            "industry", "category", "start_date",
+            "industry", "start_date", "category",
         ),
         Index(
             "ix_impact_events_geo_date",
