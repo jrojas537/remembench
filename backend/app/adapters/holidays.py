@@ -13,7 +13,7 @@ Sources:
 - Built-in US calendar fallback (no API needed)
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.adapters.base import BaseAdapter
 from app.config import settings
@@ -130,7 +130,7 @@ class HolidayAdapter(BaseAdapter):
                     continue
 
                 try:
-                    h_date = datetime.fromisoformat(date_str)
+                    h_date = datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
                 except ValueError:
                     continue
 
@@ -193,8 +193,8 @@ class HolidayAdapter(BaseAdapter):
                 continue
 
             try:
-                h_start = datetime.fromisoformat(start)
-                h_end = datetime.fromisoformat(end) if end else h_start
+                h_start = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
+                h_end = datetime.fromisoformat(end).replace(tzinfo=timezone.utc) if end else h_start
             except ValueError:
                 continue
 
@@ -258,7 +258,7 @@ class HolidayAdapter(BaseAdapter):
         for year in range(start_date.year, end_date.year + 1):
             for name, month, day in major_holidays:
                 try:
-                    h_date = datetime(year, month, day)
+                    h_date = datetime(year, month, day, tzinfo=timezone.utc)
                 except ValueError:
                     continue
 
