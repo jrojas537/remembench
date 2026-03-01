@@ -1,5 +1,4 @@
 import pytest
-import os
 from datetime import datetime
 from fastapi.testclient import TestClient
 from mcp.server.fastmcp import FastMCP

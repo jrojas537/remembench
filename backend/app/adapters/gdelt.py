@@ -34,6 +34,7 @@ class GdeltAdapter(BaseAdapter):
     def __init__(self) -> None:
         super().__init__("gdelt")
         self.base_url = "https://api.gdeltproject.org/api/v2/doc/doc"
+        self.requires_llm_classification = True
 
     async def fetch_events(
         self,

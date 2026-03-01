@@ -66,6 +66,7 @@ class IndustryRssAdapter(BaseAdapter):
 
     def __init__(self) -> None:
         super().__init__("rss")
+        self.requires_llm_classification = True
 
     async def fetch_events(
         self,

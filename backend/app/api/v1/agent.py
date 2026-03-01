@@ -1,5 +1,5 @@
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
@@ -15,27 +15,23 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 async def get_anomalies(
     db: AsyncSession = Depends(get_db),
     industry: str = Query(..., description="Target industry slug (e.g. 'wireless_retail', 'pizza_full_service')"),
-    start_date: str = Query(..., description="Start date YYYY-MM-DD"),
-    end_date: str = Query(..., description="End date YYYY-MM-DD"),
+    start_date: date = Query(..., description="Start date YYYY-MM-DD"),
+    end_date: date = Query(..., description="End date YYYY-MM-DD"),
     market: Optional[str] = Query(None, description="Optional specific market (e.g., 'New York City')"),
-    limit: int = 50,
+    limit: int = Query(50, le=200, description="Max results (capped at 200)"),
     detail_level: str = Query("low", description="'low' returns just a bullet point summary. 'high' returns the full text schema.")
 ):
     """
     Highly compressed endpoint specifically built for LLM/Agent consumption.
     Strips raw JSON payloads and metadata to save token space in the context window.
     """
-    try:
-        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
-
+    # Start and end date are natively validated as YYYY-MM-DD format thanks to Pydantic typing
+    
     query = select(ImpactEvent).where(
         and_(
             ImpactEvent.industry == industry,
-            ImpactEvent.start_date >= start_dt,
-            ImpactEvent.start_date <= end_dt
+            ImpactEvent.start_date >= start_date,
+            ImpactEvent.start_date <= end_date
         )
     )
 

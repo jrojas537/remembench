@@ -37,6 +37,7 @@ class BaseAdapter(ABC):
         self.logger = get_logger(f"adapter.{name}")
         # Lazily initialized — avoids creating a TCP pool until first use
         self._client: httpx.AsyncClient | None = None
+        self.requires_llm_classification: bool = False
 
     async def _get_client(self, timeout: float = 30.0) -> httpx.AsyncClient:
         """Get or create a reusable async HTTP client with connection pooling."""
