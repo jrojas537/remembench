@@ -26,6 +26,7 @@ from app.adapters.noaa_cdo import NoaaCdoAdapter
 from app.adapters.gdelt import GdeltAdapter
 from app.adapters.carrier_rss import IndustryRssAdapter
 from app.adapters.holidays import HolidayAdapter
+from app.adapters.web_search import WebSearchAdapter
 from app.logging import get_logger
 from app.models import ImpactEvent
 from app.schemas import ImpactEventCreate
@@ -51,6 +52,7 @@ class IngestionService:
             GdeltAdapter(),
             IndustryRssAdapter(),
             HolidayAdapter(),
+            WebSearchAdapter(),
         ]
         self.classification_service = ClassificationService()
 
@@ -96,8 +98,8 @@ class IngestionService:
                 
                 # Classify unstructured events using the LLM
                 # (We skip purely structured adapters like OpenMeteo/Holidays if they already set severity,
-                # but for now we'll route GDELT and RSS through the LLM to extract meaning)
-                if adapter.name in ["gdelt", "industry_rss"]:
+                # but for now we'll route GDELT, RSS, and Web Search through the LLM to extract meaning)
+                if adapter.name in ["gdelt", "industry_rss", "web_search"]:
                     for ev in events:
                         # Raw Payload contains the article content or text snippet
                         text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
