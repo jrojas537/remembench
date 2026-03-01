@@ -453,11 +453,10 @@ export default function Dashboard() {
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                 if (diffDays > 3 || diffDays < 0) {
-                    // Force start date to be exactly 3 days before end date
+                    // Limit the query parameters without mutating the user's UI state mid-selection
                     const newStart = new Date(end);
                     newStart.setDate(newStart.getDate() - 3);
                     const formattedStart = newStart.toISOString().split('T')[0];
-                    setStartDate(formattedStart);
                     params.set("start_date", formattedStart);
                 } else {
                     params.set("start_date", start.toISOString().split('T')[0]);
