@@ -1,4 +1,6 @@
 import json
+import hashlib
+import asyncio
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -37,6 +39,9 @@ class WebSearchAdapter(BaseAdapter):
 
     
     def __init__(self):
+        super().__init__("web_search")
+        self.requires_llm_classification = True
+        
         # Initialize clients only if their keys exist
         self.tavily_client = AsyncTavilyClient(api_key=settings.tavily_api_key) if getattr(settings, "tavily_api_key", None) else None
         
@@ -94,7 +99,6 @@ class WebSearchAdapter(BaseAdapter):
         if not raw_results and self.exa_client:
             try:
                 logger.info(f"Attempting Exa search for: {query}")
-                import asyncio
                 loop = asyncio.get_running_loop()
                 response = await loop.run_in_executor(
                     None, 
@@ -139,7 +143,6 @@ class WebSearchAdapter(BaseAdapter):
         events = []
         for res in raw_results:
             # We generate a deterministic source_id from URL
-            import hashlib
             url_hash = hashlib.md5(res.get('url', '').encode()).hexdigest()[:12]
             
             events.append(

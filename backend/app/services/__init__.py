@@ -97,9 +97,7 @@ class IngestionService:
                 )
                 
                 # Classify unstructured events using the LLM
-                # (We skip purely structured adapters like OpenMeteo/Holidays if they already set severity,
-                # but for now we'll route GDELT, RSS, and Web Search through the LLM to extract meaning)
-                if adapter.name in ["gdelt", "industry_rss", "web_search"]:
+                if getattr(adapter, 'requires_llm_classification', False):
                     for ev in events:
                         # Raw Payload contains the article content or text snippet
                         text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
