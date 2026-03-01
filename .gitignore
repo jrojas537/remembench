@@ -53,3 +53,5 @@ ehthumbs.db
 # --- Artifact / Brain ---
 .gemini/
 *.tar.gz
+._*
+deploy.sh
