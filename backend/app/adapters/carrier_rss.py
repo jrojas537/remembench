@@ -175,13 +175,27 @@ class IndustryRssAdapter(BaseAdapter):
     def _parse_entry_date(self, entry: dict) -> datetime | None:
         """Extract and parse the publication date from an RSS entry."""
         for date_field in ("published", "updated", "created"):
+            # Prioritize parsed date tuples from feedparser, convert to naive UTC
+            parsed_date_tuple = entry.get(f"{date_field}_parsed")
+            if parsed_date_tuple:
+                try:
+                    # Convert time.struct_time to naive datetime
+                    return datetime(*parsed_date_tuple[:6])
+                except (ValueError, TypeError):
+                    pass # Fallback to string parsing
+
+            # Fallback to string parsing if parsed_date_tuple is not available or fails
             date_str = entry.get(date_field)
             if date_str:
                 try:
-                    return parsedate_to_datetime(date_str)
+                    # parsedate_to_datetime returns timezone-aware datetime
+                    dt = parsedate_to_datetime(date_str)
+                    return dt.replace(tzinfo=None) if dt else None # Convert to naive
                 except (ValueError, TypeError):
                     try:
-                        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                        # fromisoformat can handle some ISO 8601 strings
+                        dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                        return dt.replace(tzinfo=None)
                     except (ValueError, TypeError):
                         continue
         return None
