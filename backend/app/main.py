@@ -63,6 +63,12 @@ app.add_middleware(
 
 # --- Route Registration ---
 from app.routes import auth, users, billing, impact_events, yoy_comparison, ingestion, health, industries  # noqa: E402
+from app.api.v1 import agent
+
+app.include_router(
+    agent.router,
+    prefix=settings.api_prefix,
+)
 
 app.include_router(
     auth.router,
