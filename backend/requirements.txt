@@ -30,7 +30,7 @@ langchain==0.3.14
 langchain-community==0.3.14
 
 # NLP / Text Processing
-gdeltPyR==0.1.10
+gdeltPyR
 
 # Geospatial
 shapely==2.0.6
