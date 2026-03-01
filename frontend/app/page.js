@@ -375,6 +375,7 @@ export default function Dashboard() {
     const [geoFilter, setGeoFilter] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [isDemo, setIsDemo] = useState(false);
+    const [isSearchingWeb, setIsSearchingWeb] = useState(false);
 
     const defaultStartDate = useMemo(() => {
         const d = new Date();
@@ -490,8 +491,39 @@ export default function Dashboard() {
                     return r.json();
                 }),
             ]);
-            setEvents(eventsRes);
-            setStats(statsRes);
+
+            if (eventsRes.length === 0 && !isDemo) {
+                setIsSearchingWeb(true);
+                try {
+                    const runParams = new URLSearchParams();
+                    runParams.set("start_date", params.get("start_date"));
+                    runParams.set("end_date", params.get("end_date"));
+                    runParams.set("industry", industry);
+                    if (geoFilter) runParams.set("geo_label", geoFilter);
+
+                    await fetch(`${API_BASE}/ingestion/run?${runParams}`, {
+                        method: "POST",
+                        headers
+                    });
+
+                    // Re-fetch data after ingestion finishes
+                    const [newEventsRes, newStatsRes] = await Promise.all([
+                        fetch(`${API_BASE}/events/?${params}`, { headers }).then((r) => r.json()),
+                        fetch(`${API_BASE}/events/stats/summary?${statsParams}`, { headers }).then((r) => r.json()),
+                    ]);
+                    setEvents(newEventsRes);
+                    setStats(newStatsRes);
+                } catch (e) {
+                    console.error("Live web search failed:", e);
+                    setEvents([]);
+                    setStats({ categories: {} });
+                } finally {
+                    setIsSearchingWeb(false);
+                }
+            } else {
+                setEvents(eventsRes);
+                setStats(statsRes);
+            }
             setIsDemo(false);
         } catch {
             // Backend not running — use industry-specific demo data
@@ -855,11 +887,19 @@ export default function Dashboard() {
                             />
                         ))}
                     </div>
+                ) : isSearchingWeb ? (
+                    <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
+                        <div className="spinner" style={{ fontSize: "2rem", animation: "spin 2s linear infinite" }}>🤖</div>
+                        <h3>Scanning Live Web...</h3>
+                        <p style={{ color: "var(--color-accent-amber)" }}>
+                            Firing AI agents to analyze current web events. This may take 10-20 seconds.
+                        </p>
+                    </div>
                 ) : events.length === 0 ? (
                     <div className="empty-state">
                         <div className="empty-icon">🔍</div>
                         <h3>No events found</h3>
-                        <p>Try adjusting your filters or ingesting data for this industry.</p>
+                        <p>No local or live web data found for this date range and market.</p>
                     </div>
                 ) : (
                     <div className="event-list">
