@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime
 from app.llm import get_llm_client
 from app.logging import get_logger
@@ -33,16 +34,13 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
         try:
             response_text = await self.llm.complete(system=system_prompt, user=text)
             
-            # Clean up formatting if the LLM ignores instructions and returns markdown blocks
-            cleaned_text = response_text.strip()
-            if cleaned_text.startswith("```json"):
-                cleaned_text = cleaned_text[7:]
-            if cleaned_text.startswith("```"):
-                cleaned_text = cleaned_text[3:]
-            if cleaned_text.endswith("```"):
-                cleaned_text = cleaned_text[:-3]
-                
-            return json.loads(cleaned_text.strip())
+            # Use regex to robustly extract the first JSON block amidst conversational hallucination
+            match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if not match:
+                raise ValueError("No JSON object found in LLM response")
+            
+            cleaned_text = match.group(0)
+            return json.loads(cleaned_text)
             
         except Exception as e:
             logger.error("llm_classification_failed", error=str(e), text_snippet=text[:100])

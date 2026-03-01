@@ -28,13 +28,13 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency that yields an async database session.
 
     The session is automatically committed on success or rolled back
-    on exception. The context manager handles closing — no explicit
-    close() needed (avoids double-close).
+    The context manager handles closing - no explicit
+    close() needed (avoids double-close). Routing that mutates
+    data must explicitly call await db.commit().
     """
     async with async_session_factory() as session:
         try:
             yield session
-            await session.commit()
         except Exception:
             await session.rollback()
             raise

@@ -96,21 +96,24 @@ class IngestionService:
                     geo_label=geo_label,
                 )
                 
-                # Classify unstructured events using the LLM
+                # Classify unstructured events using the LLM with bounded concurrency
                 if getattr(adapter, 'requires_llm_classification', False):
-                    for ev in events:
-                        # Raw Payload contains the article content or text snippet
-                        text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
-                        if text_to_analyze:
-                            classification = await self.classification_service.classify_event(
-                                text=text_to_analyze, 
-                                industry=industry
-                            )
-                            # Override the defaults with LLM analysis
-                            ev.severity = classification.get("severity", ev.severity)
-                            ev.confidence = classification.get("confidence", ev.confidence)
-                            ev.category = classification.get("category", ev.category)
-                            ev.description = classification.get("summary", ev.description)
+                    sem = asyncio.Semaphore(5)
+                    
+                    async def _classify(ev):
+                        async with sem:
+                            text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
+                            if text_to_analyze:
+                                classification = await self.classification_service.classify_event(
+                                    text=text_to_analyze, 
+                                    industry=industry
+                                )
+                                ev.severity = classification.get("severity", ev.severity)
+                                ev.confidence = classification.get("confidence", ev.confidence)
+                                ev.category = classification.get("category", ev.category)
+                                ev.description = classification.get("summary", ev.description)
+                    
+                    await asyncio.gather(*[_classify(ev) for ev in events])
 
                 adapter_stats[adapter.name] = {
                     "fetched": len(events),

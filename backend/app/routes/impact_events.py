@@ -79,7 +79,7 @@ async def create_event(
     return db_event
 
 
-@router.get("/", response_model=list[ImpactEventResponse])
+@router.get("/", response_model=list[ImpactEventResponse], dependencies=[Depends(require_api_key)])
 async def list_events(
     category: str | None = Query(None, description="Filter by impact category"),
     source: str | None = Query(None, description="Filter by data source"),
@@ -117,7 +117,7 @@ async def list_events(
 
 
 # NOTE: /stats/summary must come BEFORE /{event_id} — see module docstring.
-@router.get("/stats/summary")
+@router.get("/stats/summary", dependencies=[Depends(require_api_key)])
 async def event_stats(
     industry: str = Query("wireless_retail", description="Industry vertical"),
     start_date: datetime | None = Query(None, description="Filter events on or after this date"),
@@ -159,7 +159,7 @@ async def event_stats(
     }
 
 
-@router.get("/{event_id}", response_model=ImpactEventResponse)
+@router.get("/{event_id}", response_model=ImpactEventResponse, dependencies=[Depends(require_api_key)])
 async def get_event(
     event_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),

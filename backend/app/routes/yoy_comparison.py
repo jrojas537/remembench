@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.logging import get_logger
 from app.models import ImpactEvent
+from app.auth import require_api_key
 from app.schemas import (
     ImpactEventResponse,
     YoYComparisonResponse,
@@ -135,7 +136,7 @@ def _find_significant_deltas(
     return deltas
 
 
-@router.get("/compare", response_model=YoYComparisonResponse)
+@router.get("/compare", response_model=YoYComparisonResponse, dependencies=[Depends(require_api_key)])
 async def compare_yoy(
     start_date: datetime = Query(..., description="Start of the target period"),
     end_date: datetime = Query(..., description="End of the target period"),
