@@ -53,7 +53,6 @@ class Settings(BaseSettings):
     # --- External API Keys ---
     noaa_cdo_token: str = ""
     abstract_api_key: str = ""
-    openai_api_key: str = ""  # Optional: for hosted LLM fallback
     
     # --- Billing / Stripe ---
     stripe_secret_key: str = ""
@@ -68,10 +67,17 @@ class Settings(BaseSettings):
     # --- GDELT ---
     gdelt_base_url: str = "https://api.gdeltproject.org/api/v2"
 
-    # --- LLM / RAG ---
+    # --- LLM / Classification ---
+    llm_provider: str = "openai"  # openai | gemini | anthropic
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-3-5-haiku-20241022"
+
     embedding_model: str = "all-MiniLM-L6-v2"
     chroma_persist_dir: str = "./data/chromadb"
-    llm_model: str = "mistral"  # Local model via Ollama
 
     # --- Logging ---
     log_level: str = "INFO"

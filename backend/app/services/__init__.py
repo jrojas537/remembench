@@ -28,6 +28,7 @@ from app.adapters.holidays import HolidayAdapter
 from app.logging import get_logger
 from app.models import ImpactEvent
 from app.schemas import ImpactEventCreate
+from app.services.classification import ClassificationService
 
 logger = get_logger("services.ingestion")
 
@@ -50,6 +51,7 @@ class IngestionService:
             IndustryRssAdapter(),
             HolidayAdapter(),
         ]
+        self.classification_service = ClassificationService()
 
     async def ingest(
         self,
@@ -90,6 +92,25 @@ class IngestionService:
                     longitude=longitude,
                     geo_label=geo_label,
                 )
+                
+                # Classify unstructured events using the LLM
+                # (We skip purely structured adapters like OpenMeteo/Holidays if they already set severity,
+                # but for now we'll route GDELT and RSS through the LLM to extract meaning)
+                if adapter.name in ["gdelt", "industry_rss"]:
+                    for ev in events:
+                        # Raw Payload contains the article content or text snippet
+                        text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
+                        if text_to_analyze:
+                            classification = await self.classification_service.classify_event(
+                                text=text_to_analyze, 
+                                industry=industry
+                            )
+                            # Override the defaults with LLM analysis
+                            ev.severity = classification.get("severity", ev.severity)
+                            ev.confidence = classification.get("confidence", ev.confidence)
+                            ev.category = classification.get("category", ev.category)
+                            ev.description = classification.get("summary", ev.description)
+
                 adapter_stats[adapter.name] = {
                     "fetched": len(events),
                     "status": "success",
