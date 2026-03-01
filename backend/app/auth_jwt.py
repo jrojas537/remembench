@@ -17,7 +17,7 @@ from app.config import settings
 # Usually these are defined in your env config, falling back to static for fast execution.
 SECRET_KEY = getattr(settings, "jwt_secret_key", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7")
 ALGORITHM = getattr(settings, "jwt_algorithm", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = getattr(settings, "jwt_expire_minutes", 60 * 24 * 7) # 7 Days
+ACCESS_TOKEN_EXPIRE_MINUTES = getattr(settings, "jwt_expire_minutes", 120) # 2 Hours
 
 # --- Auth Security Functions ---
 

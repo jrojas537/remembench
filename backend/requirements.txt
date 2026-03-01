@@ -1,5 +1,5 @@
 # Core Framework
-fastapi==0.115.6
+fastapi>=0.115.8
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 pydantic-settings==2.7.1
@@ -16,7 +16,7 @@ redis==5.2.1
 
 # HTTP / Data Fetching
 httpx==0.28.1
-aiohttp==3.11.11
+aiohttp>=3.13.3
 feedparser==6.0.11
 
 # Data Processing
@@ -24,10 +24,11 @@ pandas==2.2.3
 numpy==2.2.1
 
 # LLM / RAG Pipeline
-chromadb==0.5.23
-sentence-transformers==3.3.1
-langchain==0.3.14
-langchain-community==0.3.14
+chromadb>=0.5.23
+sentence-transformers>=3.3.1
+transformers>=4.53.0
+langchain>=0.3.27
+langchain-community>=0.3.27
 
 # NLP / Text Processing
 
@@ -37,14 +38,14 @@ pyproj==3.7.0
 
 # Utilities
 python-dotenv==1.0.1
-python-jose[cryptography]==3.3.0
+python-jose[cryptography]>=3.4.0
 python-dateutil==2.9.0.post0
 structlog==24.4.0
 tenacity==9.0.0
 # Authentication
 bcrypt==4.3.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.18
+python-multipart>=0.0.22
 PyJWT==2.10.1
 stripe
 email-validator
