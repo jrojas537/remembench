@@ -1,0 +1,161 @@
+# ==========================================================
+# docker-compose.yml — Remembench (YoY Performance Context Engine)
+#
+# Services: nginx (reverse proxy), frontend (Next.js),
+#           backend (FastAPI), celery-worker, celery-beat,
+#           postgres (PostGIS), redis
+#
+# Usage:
+#   cp .env.example .env   # fill in secrets
+#   docker compose up -d --build
+# ==========================================================
+
+services:
+  # --------------------------------------------------------
+  # Nginx — Reverse Proxy + TLS termination point
+  # --------------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # --------------------------------------------------------
+  # Frontend — Next.js (standalone production build)
+  # --------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=/api/v1
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # --------------------------------------------------------
+  # Backend — FastAPI (uvicorn)
+  # --------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    expose:
+      - "8000"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - backend-data:/app/data
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # --------------------------------------------------------
+  # Celery Worker — Processes ingestion tasks
+  # --------------------------------------------------------
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A app.tasks worker --loglevel=info --concurrency=2
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - backend-data:/app/data
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # --------------------------------------------------------
+  # Celery Beat — Scheduled task runner
+  # --------------------------------------------------------
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A app.tasks beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # --------------------------------------------------------
+  # PostgreSQL + PostGIS
+  # --------------------------------------------------------
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-remembench}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-remembench}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-remembench} -d ${POSTGRES_DB:-remembench}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # --------------------------------------------------------
+  # Redis — Celery broker + result backend
+  # --------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    networks:
+      - app-network
+
+# ============================================================
+# Volumes & Networks
+# ============================================================
+volumes:
+  postgres-data:
+  redis-data:
+  backend-data:
+
+
+networks:
+  app-network:
+    driver: bridge
