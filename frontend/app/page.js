@@ -376,6 +376,19 @@ export default function Dashboard() {
     const [categoryFilter, setCategoryFilter] = useState("");
     const [isDemo, setIsDemo] = useState(false);
 
+    const defaultStartDate = useMemo(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 3);
+        return d.toISOString().split('T')[0];
+    }, []);
+    const defaultEndDate = useMemo(() => {
+        const d = new Date();
+        return d.toISOString().split('T')[0];
+    }, []);
+
+    const [startDate, setStartDate] = useState(defaultStartDate);
+    const [endDate, setEndDate] = useState(defaultEndDate);
+
     // Apply user preferences on load
     useEffect(() => {
         if (user?.preferences) {
@@ -432,17 +445,37 @@ export default function Dashboard() {
                 industry,
             });
 
-            // Limit free accounts to maximum historical lookback of 7 days
+            // Handle date ranges and constraints
             if (!isPremium) {
-                const sevenDaysAgo = new Date();
-                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                params.set("start_date", sevenDaysAgo.toISOString().split('T')[0]);
+                const start = new Date(startDate || defaultStartDate);
+                const end = new Date(endDate || defaultEndDate);
+                const diffTime = end.getTime() - start.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays > 3 || diffDays < 0) {
+                    // Force start date to be exactly 3 days before end date
+                    const newStart = new Date(end);
+                    newStart.setDate(newStart.getDate() - 3);
+                    const formattedStart = newStart.toISOString().split('T')[0];
+                    setStartDate(formattedStart);
+                    params.set("start_date", formattedStart);
+                } else {
+                    params.set("start_date", start.toISOString().split('T')[0]);
+                }
+                params.set("end_date", end.toISOString().split('T')[0]);
+            } else {
+                if (startDate) params.set("start_date", startDate);
+                if (endDate) params.set("end_date", endDate);
             }
 
             if (geoFilter) params.set("geo_label", geoFilter);
             if (categoryFilter) params.set("category", categoryFilter);
 
             const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+
+            // Synchronize parameters for the summary endpoint so UI matches the exact range requested
+            const statsParams = new URLSearchParams(params);
+            statsParams.delete("limit");
 
             const [eventsRes, statsRes] = await Promise.all([
                 fetch(`${API_BASE}/events/?${params}`, { headers }).then((r) => {
@@ -451,7 +484,7 @@ export default function Dashboard() {
                     return r.json();
                 }),
                 fetch(
-                    `${API_BASE}/events/stats/summary?industry=${industry}${!isPremium ? `&start_date=${params.get('start_date')}` : ''}`,
+                    `${API_BASE}/events/stats/summary?${statsParams}`,
                     { headers }
                 ).then((r) => {
                     if (!r.ok) throw new Error("API unavailable");
@@ -475,7 +508,7 @@ export default function Dashboard() {
         } finally {
             setLoading(false);
         }
-    }, [industry, geoFilter, categoryFilter, token, user]);
+    }, [industry, geoFilter, categoryFilter, token, user, startDate, endDate, defaultStartDate, defaultEndDate]);
 
     useEffect(() => {
         loadData();
@@ -628,11 +661,32 @@ export default function Dashboard() {
                     </select>
                 </div>
 
+                <div className="control-group">
+                    <label htmlFor="start-date">Start Date</label>
+                    <input
+                        type="date"
+                        id="start-date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--border-color)", background: "var(--background-paper)", color: "var(--color-text-primary)" }}
+                    />
+                </div>
+                <div className="control-group">
+                    <label htmlFor="end-date">End Date</label>
+                    <input
+                        type="date"
+                        id="end-date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--border-color)", background: "var(--background-paper)", color: "var(--color-text-primary)" }}
+                    />
+                </div>
+
                 {!user || user.tier === "free" ? (
                     <div className="control-group" style={{ display: "flex", alignItems: "center" }}>
-                        <div style={{ background: "rgba(245, 158, 11, 0.1)", color: "#d97706", padding: "0.5rem 1rem", borderRadius: "8px", fontSize: "0.875rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                            <span>🔒 Viewing last 7 days only.</span>
-                            <Link href="/pricing" style={{ color: "var(--color-primary)", textDecoration: "underline", fontWeight: "600" }}>Upgrade for unlimited.</Link>
+                        <div style={{ background: "rgba(245, 158, 11, 0.1)", color: "#d97706", padding: "0.5rem 1rem", borderRadius: "8px", fontSize: "0.875rem", display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "flex-start", maxWidth: "250px" }}>
+                            <span>🔒 Standard accounts are limited to a <b>3-day</b> search window.</span>
+                            <Link href="/pricing" style={{ color: "var(--color-primary)", textDecoration: "underline", fontWeight: "600" }}>Upgrade for unlimited range.</Link>
                         </div>
                     </div>
                 ) : null}
