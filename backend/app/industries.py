@@ -73,7 +73,7 @@ WIRELESS_MARKETS = [
 
 # Detroit metro area + key Michigan cities for pizza analysis
 PIZZA_MARKETS = [
-    Market("Detroit", 42.3314, -83.0458),
+    Market("Detroit Metro", 42.3314, -83.0458),
     Market("Dearborn", 42.3223, -83.1763),
     Market("Warren", 42.4775, -83.0277),
     Market("Ann Arbor", 42.2808, -83.7430),
