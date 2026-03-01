@@ -11,6 +11,7 @@ find the equivalent periods so analysts can adjust forecasts.
 """
 
 from datetime import datetime
+import asyncio
 from dateutil.relativedelta import relativedelta
 
 from fastapi import APIRouter, Depends, Query
@@ -165,22 +166,27 @@ async def compare_yoy(
     prior_summaries: list[YoYPeriodSummary] = []
     all_deltas: list[dict] = []
 
-    for years_back in range(1, lookback_years + 1):
+    async def fetch_and_summarize(years_back: int) -> YoYPeriodSummary:
         prior_start = start_date - relativedelta(years=years_back)
         prior_end = end_date - relativedelta(years=years_back)
 
         prior_events = await _get_period_events(
             db, prior_start, prior_end, industry, geo_label, categories
         )
-        prior_summary = _build_period_summary(
+        return _build_period_summary(
             prior_start.year, prior_start, prior_end, prior_events
         )
+
+    tasks = [fetch_and_summarize(y) for y in range(1, lookback_years + 1)]
+    results = await asyncio.gather(*tasks)
+
+    for prior_summary in results:
         prior_summaries.append(prior_summary)
 
         # Find what changed between this year and the prior year
         deltas = _find_significant_deltas(current_summary, prior_summary)
         for d in deltas:
-            d["compared_year"] = prior_start.year
+            d["compared_year"] = prior_summary.year
         all_deltas.extend(deltas)
 
     logger.info(
