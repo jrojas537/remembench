@@ -69,7 +69,6 @@ class HolidayAdapter(BaseAdapter):
         # Strip tzinfo so we can compare against naive parsed holiday dates safely
         start_date = start_date.replace(tzinfo=None)
         end_date = end_date.replace(tzinfo=None)
-        self.logger.info("holiday_bounds_check", start_tz=start_date.tzinfo, end_tz=end_date.tzinfo)
 
         events: list[ImpactEventCreate] = []
 
