@@ -66,6 +66,10 @@ class HolidayAdapter(BaseAdapter):
         Holidays are industry-universal — they impact traffic patterns
         across all verticals, just in different ways.
         """
+        # Strip tzinfo so we can compare against naive parsed holiday dates safely
+        start_date = start_date.replace(tzinfo=None)
+        end_date = end_date.replace(tzinfo=None)
+
         events: list[ImpactEventCreate] = []
 
         # Fetch from Abstract API if key is configured
