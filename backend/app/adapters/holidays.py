@@ -69,6 +69,7 @@ class HolidayAdapter(BaseAdapter):
         # Strip tzinfo so we can compare against naive parsed holiday dates safely
         start_date = start_date.replace(tzinfo=None)
         end_date = end_date.replace(tzinfo=None)
+        self.logger.info("holiday_bounds_check", start_tz=start_date.tzinfo, end_tz=end_date.tzinfo)
 
         events: list[ImpactEventCreate] = []
 
@@ -197,8 +198,8 @@ class HolidayAdapter(BaseAdapter):
                 continue
 
             try:
-                h_start = datetime.fromisoformat(start).replace(tzinfo=timezone.utc)
-                h_end = datetime.fromisoformat(end).replace(tzinfo=timezone.utc) if end else h_start
+                h_start = datetime.fromisoformat(start).replace(tzinfo=None)
+                h_end = datetime.fromisoformat(end).replace(tzinfo=None) if end else h_start
             except ValueError:
                 continue
 
@@ -262,7 +263,7 @@ class HolidayAdapter(BaseAdapter):
         for year in range(start_date.year, end_date.year + 1):
             for name, month, day in major_holidays:
                 try:
-                    h_date = datetime(year, month, day, tzinfo=timezone.utc)
+                    h_date = datetime(year, month, day)
                 except ValueError:
                     continue
 
