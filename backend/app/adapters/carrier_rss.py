@@ -81,6 +81,10 @@ class IndustryRssAdapter(BaseAdapter):
         Fetch RSS feeds for the specified industry and extract
         relevant announcements within the date range.
         """
+        # Strip tzinfo so we can compare against naive parsed RSS dates safely
+        start_date = start_date.replace(tzinfo=None)
+        end_date = end_date.replace(tzinfo=None)
+
         all_events: list[ImpactEventCreate] = []
 
         # Get industry-specific RSS feeds from the registry
