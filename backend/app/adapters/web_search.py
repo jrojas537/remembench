@@ -29,14 +29,14 @@ except ImportError:
 
 class WebSearchAdapter(BaseAdapter):
     """
-    Adapter that implements a Chain of Responsibility for gathering market news.
-    Tries premium, highly-structured search APIs first, falling back to free scrapers 
-    if credentials are missing, quotas are reached, or services are down.
+    Adapter that uses search engines (Tavily/Exa/DuckDuckGo) to find
+    news articles and promotions when structured sources are empty.
     """
+    name = "web_search"
+    requires_llm_classification = True
 
     def __init__(self):
         super().__init__("web_search")
-
         self.requires_llm_classification = True
         
         # Initialize clients only if their keys exist
@@ -69,14 +69,14 @@ class WebSearchAdapter(BaseAdapter):
 
         # Build a tight, industry-specific query targeting EVENT DRIVERS and PROMOTIONS
         if industry.startswith("pizza"):
-            industry_terms = '("pizza delivery" OR Dominos OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") AND (promotion OR discount OR "Super Bowl" OR "sports event" OR "local festival")'
+            industry_terms = '("pizza delivery" OR Dominos OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") (promotion OR discount OR "Super Bowl" OR "sports event" OR "local festival" OR "limited time offer" OR BOGO)'
         elif industry == "wireless_retail":
-            industry_terms = '("cell phone" OR "wireless store" OR "T-Mobile" OR Verizon OR "AT&T") AND (promotion OR "new iPhone" OR "device launch" OR "network outage" OR "5g rollout")'
+            industry_terms = '("cell phone" OR "wireless store" OR "T-Mobile" OR Verizon OR "AT&T") (promotion OR "new iPhone" OR "device launch" OR "network outage" OR "5g rollout" OR "switch deal" OR "trade-in offer")'
         else:
             industry_terms = f'{industry.replace("_", " ")} AND (news OR event OR promotion OR disruption)'
 
         query = (
-            f"{industry_terms} {market}"
+            f"{industry_terms} {market} {year}"
         )
         
         raw_results = []

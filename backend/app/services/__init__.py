@@ -111,7 +111,15 @@ class IngestionService:
                                 ev.severity = classification.get("severity", ev.severity)
                                 ev.confidence = classification.get("confidence", ev.confidence)
                                 ev.category = classification.get("category", ev.category)
+                                ev.subcategory = classification.get("subcategory", ev.subcategory)
+                                ev.title = classification.get("summary", ev.title)
                                 ev.description = classification.get("summary", ev.description)
+                                
+                                # Store rich details in the payload for the frontend modal
+                                if "details" in classification:
+                                    if not ev.raw_payload:
+                                        ev.raw_payload = {}
+                                    ev.raw_payload["details"] = classification["details"]
                     
                     await asyncio.gather(*[_classify(ev) for ev in events])
 
