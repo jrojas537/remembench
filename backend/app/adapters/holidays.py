@@ -108,7 +108,9 @@ class HolidayAdapter(BaseAdapter):
         """Fetch public holidays from Abstract API (free tier)."""
         events: list[ImpactEventCreate] = []
 
-        for year in range(start_date.year, end_date.year + 1):
+        # Safety clamp for malformed dates leading to huge loops
+        start_year = max(2000, start_date.year)
+        for year in range(start_year, end_date.year + 1):
             url = "https://holidays.abstractapi.com/v1/"
             params = {
                 "api_key": self.abstract_api_key,
