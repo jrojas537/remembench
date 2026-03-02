@@ -22,9 +22,10 @@ except ImportError:
     Exa = None
 
 try:
-    from duckduckgo_search import AsyncDDGS
+    from duckduckgo_search import DDGS as _DDGS
 except ImportError:
-    AsyncDDGS = None
+    _DDGS = None
+
 
 class WebSearchAdapter(BaseAdapter):
     """
@@ -32,14 +33,10 @@ class WebSearchAdapter(BaseAdapter):
     Tries premium, highly-structured search APIs first, falling back to free scrapers 
     if credentials are missing, quotas are reached, or services are down.
     """
-    
-    @property
-    def name(self) -> str:
-        return "web_search"
 
-    
     def __init__(self):
         super().__init__("web_search")
+
         self.requires_llm_classification = True
         
         # Initialize clients only if their keys exist
@@ -48,8 +45,8 @@ class WebSearchAdapter(BaseAdapter):
         # Exa is currently synchronous in its standard API, so we wrap it
         self.exa_client = Exa(getattr(settings, "exa_api_key", "")) if getattr(settings, "exa_api_key", None) else None
         
-        # DDGS requires no key and is fully async
-        self.ddgs = AsyncDDGS() if AsyncDDGS else None
+        # DDGS is synchronous — we'll run it in an executor when needed
+        self.has_ddgs = _DDGS is not None
 
     async def fetch_events(
         self,
@@ -68,8 +65,20 @@ class WebSearchAdapter(BaseAdapter):
         market = geo_label if geo_label else "Unknown"
         start_str = start_date.strftime("%Y-%m-%d")
         end_str = end_date.strftime("%Y-%m-%d")
+        year = start_date.year
 
-        query = f"major local news events disruptions {industry.replace('_', ' ')} in {market} between {start_str} and {end_str}"
+        # Build a tight, industry-specific query for maximum relevance
+        if industry.startswith("pizza"):
+            industry_terms = 'pizza restaurant OR "pizza delivery" OR Dominos OR "Little Caesars" OR "Pizza Hut"'
+        elif industry == "wireless_retail":
+            industry_terms = 'wireless OR "T-Mobile" OR Verizon OR "AT&T" OR "cell phone" promotion OR deal'
+        else:
+            industry_terms = industry.replace("_", " ")
+
+        query = (
+            f"{industry_terms} {market} "
+            f"after:{start_str} before:{end_str}"
+        )
         
         raw_results = []
         
@@ -122,12 +131,15 @@ class WebSearchAdapter(BaseAdapter):
             except Exception as e:
                 logger.warning(f"Exa search failed, falling back to DDG: {str(e)}")
 
-        # 3. DuckDuckGo fallback
-        if not raw_results and self.ddgs:
+        # 3. DuckDuckGo fallback — synchronous, run in executor
+        if not raw_results and self.has_ddgs:
             try:
                 logger.info(f"Attempting DuckDuckGo fallback search for: {query}")
-                ddg_results = await self.ddgs.text(query, max_results=limit)
-                
+                loop = asyncio.get_running_loop()
+                ddg_results = await loop.run_in_executor(
+                    None,
+                    lambda: list(_DDGS().text(query, max_results=limit))
+                )
                 for res in ddg_results:
                     raw_results.append({
                         "network": "duckduckgo",
