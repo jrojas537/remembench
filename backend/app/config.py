@@ -53,7 +53,11 @@ class Settings(BaseSettings):
     # --- External API Keys ---
     noaa_cdo_token: str = ""
     abstract_api_key: str = ""
-    
+
+    # --- Web Search (historical article lookup) ---
+    exa_api_key: str = ""
+    tavily_api_key: str = ""
+
     # --- Billing / Stripe ---
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
