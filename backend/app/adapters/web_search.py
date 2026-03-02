@@ -76,8 +76,7 @@ class WebSearchAdapter(BaseAdapter):
             industry_terms = f'{industry.replace("_", " ")} AND (news OR event OR promotion OR disruption)'
 
         query = (
-            f"{industry_terms} {market} "
-            f"after:{start_str} before:{end_str}"
+            f"{industry_terms} {market}"
         )
         
         raw_results = []
