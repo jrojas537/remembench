@@ -104,8 +104,11 @@ async def list_events(
     if source:
         query = query.where(ImpactEvent.source == source)
     if geo_label:
-        # Safe from SQL injection — icontains uses parameterized queries
-        query = query.where(ImpactEvent.geo_label.icontains(geo_label))
+        # Include both the specific market and "National" events
+        query = query.where(
+            (ImpactEvent.geo_label.icontains(geo_label)) | 
+            (ImpactEvent.geo_label == "National")
+        )
     if start_date:
         query = query.where(ImpactEvent.start_date >= start_date)
     if end_date:
@@ -122,14 +125,11 @@ async def event_stats(
     industry: str = Query("wireless_retail", description="Industry vertical"),
     start_date: datetime | None = Query(None, description="Filter events on or after this date"),
     end_date: datetime | None = Query(None, description="Filter events on or before this date"),
+    geo_label: str | None = Query(None, description="Filter by market name (includes National)"),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
     Get summary statistics of impact events per category.
-
-    Returns counts and average severity per category for the
-    specified industry and optional date range — used by the
-    dashboard stat cards.
     """
     stmt = (
         select(
@@ -143,8 +143,14 @@ async def event_stats(
         stmt = stmt.where(ImpactEvent.start_date >= start_date)
     if end_date:
         stmt = stmt.where(ImpactEvent.start_date <= end_date)
+    if geo_label:
+        # Include both the specific market and "National" events
+        stmt = stmt.where(
+            (ImpactEvent.geo_label.icontains(geo_label)) | 
+            (ImpactEvent.geo_label == "National")
+        )
+        
     stmt = stmt.group_by(ImpactEvent.category)
-
     result = await db.execute(stmt)
     rows = result.all()
     return {

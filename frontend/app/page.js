@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "./contexts/AuthContext";
 import ProfileSettings from "./components/ProfileSettings";
+import EventDetailsModal from "./components/EventDetailsModal";
 import Link from "next/link";
 import {
     BarChart,
@@ -317,7 +318,7 @@ function CategoryBadge({ category }) {
     );
 }
 
-function EventItem({ event }) {
+function EventItem({ event, onClick }) {
     const date = new Date(event.start_date);
     const monthNames = [
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -325,7 +326,7 @@ function EventItem({ event }) {
     ];
 
     return (
-        <div className="event-item" data-category={event.category}>
+        <div className="event-item" data-category={event.category} onClick={onClick} style={{ cursor: "pointer" }}>
             <div className="event-date">
                 <span className="day">{date.getDate()}</span>
                 {monthNames[date.getMonth()]} {date.getFullYear()}
@@ -376,6 +377,7 @@ export default function Dashboard() {
     const [categoryFilter, setCategoryFilter] = useState("");
     const [isDemo, setIsDemo] = useState(false);
     const [isSearchingWeb, setIsSearchingWeb] = useState(false);
+    const [selectedEventId, setSelectedEventId] = useState(null);
 
     const defaultStartDate = useMemo(() => {
         const d = new Date();
@@ -904,11 +906,24 @@ export default function Dashboard() {
                 ) : (
                     <div className="event-list">
                         {events.map((event) => (
-                            <EventItem key={event.id} event={event} />
+                            <EventItem
+                                key={event.id}
+                                event={event}
+                                onClick={() => setSelectedEventId(event.id)}
+                            />
                         ))}
                     </div>
                 )}
             </div>
+
+            {selectedEventId && (
+                <EventDetailsModal
+                    eventId={selectedEventId}
+                    onClose={() => setSelectedEventId(null)}
+                    token={token}
+                    API_BASE={API_BASE}
+                />
+            )}
         </>
     );
 }

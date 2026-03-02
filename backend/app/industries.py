@@ -92,20 +92,22 @@ PIZZA_MARKETS = [
 
 WIRELESS_GDELT_QUERIES = [
     "wireless store OR cell phone store OR mobile retail",
-    "T-Mobile OR Verizon OR AT&T promotion OR deal OR offer",
+    "(T-Mobile OR Verizon OR AT&T) (promotion OR deal OR offer OR \"limited time\")",
     "network outage OR service disruption OR cellular outage",
     "store closure OR retail closure OR power outage",
     "protest OR demonstration OR road closure OR parade",
+    "(iPhone OR Galaxy OR Pixel) launch OR availability OR pre-order",
 ]
 
 PIZZA_GDELT_QUERIES = [
-    '"pizza restaurant" OR "pizzeria" OR "pizza shop"',
-    '"food delivery" OR "DoorDash" OR "Uber Eats" OR "Grubhub"',
+    '"pizza restaurant" OR "pizzeria" OR "pizza shop" (promotion OR deal OR coupon)',
+    '"food delivery" OR "DoorDash" OR "Uber Eats" OR "Grubhub" (fees OR disruption OR strike)',
     '"food safety" OR "health inspection" OR "food recall" OR "restaurant inspection"',
     '"restaurant closure" OR "dining shutdown" OR "restaurant shutdown"',
     "protest OR demonstration OR road closure OR parade",
     '"minimum wage" OR "labor shortage" OR "restaurant workers"',
     '"cheese prices" OR "flour prices" OR "food costs" OR "ingredient prices"',
+    '("Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Dominos") (promotion OR discount OR launch)',
 ]
 
 
