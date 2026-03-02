@@ -134,7 +134,7 @@ class HolidayAdapter(BaseAdapter):
                     continue
 
                 try:
-                    h_date = datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
+                    h_date = datetime.fromisoformat(date_str).replace(tzinfo=None)
                 except ValueError:
                     continue
 

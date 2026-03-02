@@ -56,7 +56,7 @@ class NoaaCdoAdapter(BaseAdapter):
             "startDate": start_date.strftime("%Y-%m-%d"),
             "endDate": end_date.strftime("%Y-%m-%d"),
             "dataTypes": "TMAX,TMIN,PRCP,SNOW,AWND",
-            "boundingBox": f"{latitude+0.1},{longitude-0.1},{latitude-0.1},{longitude+0.1}",
+            "boundingBox": f"{latitude-0.1},{longitude-0.1},{latitude+0.1},{longitude+0.1}",
             "units": "metric",
             "format": "json",
             "limit": 1000,
