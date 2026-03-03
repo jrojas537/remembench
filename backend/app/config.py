@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-1.5-flash"
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-3-haiku-20240307"
 
