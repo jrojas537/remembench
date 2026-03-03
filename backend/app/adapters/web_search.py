@@ -69,7 +69,7 @@ class WebSearchAdapter(BaseAdapter):
 
         # Build a tight, industry-specific query targeting EVENT DRIVERS and PROMOTIONS
         if industry.startswith("pizza"):
-            industry_terms = '("pizza delivery" OR Dominos OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") (promotion OR discount OR "Super Bowl" OR "sports event" OR "local festival" OR "limited time offer" OR BOGO)'
+            industry_terms = '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") (promotion OR discount OR deal OR coupon OR BOGO OR offer)'
         elif industry == "wireless_retail":
             industry_terms = '("cell phone" OR "wireless store" OR "T-Mobile" OR Verizon OR "AT&T") (promotion OR "new iPhone" OR "device launch" OR "network outage" OR "5g rollout" OR "switch deal" OR "trade-in offer")'
         else:

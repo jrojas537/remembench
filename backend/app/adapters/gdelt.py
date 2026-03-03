@@ -16,6 +16,7 @@ could impact retail performance.
 Docs: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
 """
 
+import hashlib
 from datetime import datetime
 
 from app.adapters.base import BaseAdapter
@@ -147,9 +148,11 @@ class GdeltAdapter(BaseAdapter):
             category, subcategory = self._classify_article(title, industry)
             severity = self._estimate_severity(tone, title)
 
+            title_hash = hashlib.md5(title.encode("utf-8", errors="replace"), usedforsecurity=False).hexdigest()[:12]
+
             events.append(ImpactEventCreate(
                 source="gdelt",
-                source_id=f"gdelt-{url[:200]}",
+                source_id=f"gdelt-{title_hash}",
                 category=category,
                 subcategory=subcategory,
                 title=title[:512],
