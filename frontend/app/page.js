@@ -38,12 +38,25 @@ const FALLBACK_INDUSTRIES = {
             "internal_promo", "system_issue",
         ],
     },
-    pizza_full_service: {
-        label: "Pizza — Full Service",
+    pizza_all: {
+        label: "Pizza (ALL)",
         icon: "🍕",
         group: "pizza",
         markets: [
-            "Detroit", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
+            "Detroit Metro", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
+            "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy",
+        ],
+        categories: [
+            "weather", "competitor_promo", "holiday", "news",
+            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event",
+        ],
+    },
+    pizza_full_service: {
+        label: "Pizza — Full Service",
+        icon: "🍽️",
+        group: "pizza",
+        markets: [
+            "Detroit Metro", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
             "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy",
         ],
         categories: [
@@ -56,33 +69,7 @@ const FALLBACK_INDUSTRIES = {
         icon: "🛵",
         group: "pizza",
         markets: [
-            "Detroit", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
-            "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy",
-        ],
-        categories: [
-            "weather", "competitor_promo", "holiday", "news",
-            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event",
-        ],
-    },
-    pizza_bar: {
-        label: "Pizza — Bar & Restaurant",
-        icon: "🍺",
-        group: "pizza",
-        markets: [
-            "Detroit", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
-            "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy",
-        ],
-        categories: [
-            "weather", "competitor_promo", "holiday", "news",
-            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event",
-        ],
-    },
-    pizza_carryout: {
-        label: "Pizza — Carry-Out",
-        icon: "📦",
-        group: "pizza",
-        markets: [
-            "Detroit", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
+            "Detroit Metro", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
             "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy",
         ],
         categories: [
@@ -369,28 +356,50 @@ export default function Dashboard() {
     const [showSettings, setShowSettings] = useState(false);
 
     const [industries, setIndustries] = useState(null);
-    const [industry, setIndustry] = useState("wireless_retail");
+    const [industry, setIndustry] = useState("pizza_all");
     const [events, setEvents] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [geoFilter, setGeoFilter] = useState("");
+    const [geoFilter, setGeoFilter] = useState("Detroit Metro");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [isDemo, setIsDemo] = useState(false);
     const [isSearchingWeb, setIsSearchingWeb] = useState(false);
     const [selectedEventId, setSelectedEventId] = useState(null);
 
-    const defaultStartDate = useMemo(() => {
-        const d = new Date();
-        d.setDate(d.getDate() - 3);
-        return d.toISOString().split('T')[0];
-    }, []);
-    const defaultEndDate = useMemo(() => {
-        const d = new Date();
-        return d.toISOString().split('T')[0];
+    const { defaultStart, defaultEnd } = useMemo(() => {
+        // Find equivalent weekend map from 2026 -> 2025
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 is Sunday, 5 is Friday
+        let daysToFriday = 5 - dayOfWeek;
+        if (daysToFriday < 0) daysToFriday += 7;
+
+        // Find next Friday in current timeline
+        const nextFriday = new Date(today);
+        nextFriday.setDate(today.getDate() + daysToFriday);
+
+        // Shift to target historical year (2025)
+        const lastYearFridayRaw = new Date(2025, nextFriday.getMonth(), nextFriday.getDate());
+
+        // Align day of week correctly (shift forward to nearest Friday)
+        const lastYearDayOfWeek = lastYearFridayRaw.getDay();
+        let shiftDays = 5 - lastYearDayOfWeek;
+        if (shiftDays > 3) shiftDays -= 7;
+        if (shiftDays < -3) shiftDays += 7;
+
+        const alignedFriday2025 = new Date(lastYearFridayRaw);
+        alignedFriday2025.setDate(lastYearFridayRaw.getDate() + shiftDays);
+
+        const alignedSunday2025 = new Date(alignedFriday2025);
+        alignedSunday2025.setDate(alignedFriday2025.getDate() + 2); // End of weekend
+
+        return {
+            defaultStart: alignedFriday2025.toISOString().split('T')[0],
+            defaultEnd: alignedSunday2025.toISOString().split('T')[0],
+        }
     }, []);
 
-    const [startDate, setStartDate] = useState(defaultStartDate);
-    const [endDate, setEndDate] = useState(defaultEndDate);
+    const [startDate, setStartDate] = useState(defaultStart);
+    const [endDate, setEndDate] = useState(defaultEnd);
 
     // Apply user preferences on load
     useEffect(() => {
@@ -450,8 +459,8 @@ export default function Dashboard() {
 
             // Handle date ranges and constraints
             if (!isPremium) {
-                const start = new Date(startDate || defaultStartDate);
-                const end = new Date(endDate || defaultEndDate);
+                const start = new Date(startDate || defaultStart);
+                const end = new Date(endDate || defaultEnd);
                 const diffTime = end.getTime() - start.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -541,7 +550,7 @@ export default function Dashboard() {
         } finally {
             setLoading(false);
         }
-    }, [industry, geoFilter, categoryFilter, token, user, startDate, endDate, defaultStartDate, defaultEndDate]);
+    }, [industry, geoFilter, categoryFilter, token, user, startDate, endDate, defaultStart, defaultEnd]);
 
     useEffect(() => {
         loadData();
