@@ -360,7 +360,8 @@ export default function Dashboard() {
     const [industry, setIndustry] = useState("pizza_all");
     const [events, setEvents] = useState([]);
     const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [hasRun, setHasRun] = useState(false);
     const [geoFilter, setGeoFilter] = useState("Detroit Metro");
     const [categoryFilter, setCategoryFilter] = useState("");
     const [isDemo, setIsDemo] = useState(false);
@@ -449,6 +450,7 @@ export default function Dashboard() {
 
     const loadData = useCallback(async () => {
         setLoading(true);
+        setHasRun(true);
         try {
             // Setup parameters
             const isPremium = user?.tier === "pro";
@@ -552,10 +554,6 @@ export default function Dashboard() {
             setLoading(false);
         }
     }, [industry, geoFilter, categoryFilter, token, user, startDate, endDate, defaultStart, defaultEnd]);
-
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
 
     // Compute display stats
     const totalEvents = stats
@@ -786,6 +784,14 @@ export default function Dashboard() {
                                 <h3>Scanning Live Web...</h3>
                                 <p style={{ color: "var(--color-accent-amber)" }}>
                                     Firing AI agents to analyze current web events. This may take 10-20 seconds.
+                                </p>
+                            </div>
+                        ) : !hasRun ? (
+                            <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
+                                <div className="empty-icon" style={{ fontSize: "3rem", marginBottom: "1rem" }}>👋</div>
+                                <h3>Ready to analyze</h3>
+                                <p style={{ color: "var(--color-text-muted)" }}>
+                                    Select your parameters and click "Run Report" to gather insights.
                                 </p>
                             </div>
                         ) : events.length === 0 ? (
