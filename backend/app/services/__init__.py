@@ -113,7 +113,11 @@ class IngestionService:
                                 ev.category = classification.get("category", ev.category)
                                 ev.subcategory = classification.get("subcategory", ev.subcategory)
                                 ev.title = classification.get("summary", ev.title)
-                                ev.description = classification.get("summary", ev.description)
+                                
+                                # Use detailed impact for description to provide more value, fallback to summary
+                                details = classification.get("details", {})
+                                detailed_impact = details.get("detailed_impact") if isinstance(details, dict) else None
+                                ev.description = detailed_impact or classification.get("summary", ev.description)
                                 
                                 # Store rich details in the payload for the frontend modal
                                 if "details" in classification:
