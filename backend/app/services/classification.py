@@ -53,8 +53,8 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
             logger.error("llm_classification_failed", error=str(e), text_snippet=text[:100])
             # Return safe default fallbacks if LLM fails
             return {
-                "severity": 0.0,
-                "confidence": 0.0,
-                "category": "unclassified",
+                "severity": 0.5,
+                "confidence": 0.5,
+                "category": "competitor_promo",
                 "summary": text[:200]
             }
