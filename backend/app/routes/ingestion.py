@@ -46,6 +46,19 @@ async def run_ingestion(
             status_code=422,
             detail="end_date must be after start_date",
         )
+
+    if geo_label and industry and (latitude is None or longitude is None):
+        try:
+            from app.industries import get_all_markets
+            markets = get_all_markets(industry)
+            for m in markets:
+                if m.geo_label == geo_label:
+                    latitude = m.latitude
+                    longitude = m.longitude
+                    break
+        except Exception as e:
+            logger.warning(f"Could not lookup coordinates for {geo_label}: {e}")
+
     service = IngestionService()
     result = await service.ingest(
         db=db,
