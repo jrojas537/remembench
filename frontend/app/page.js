@@ -321,8 +321,9 @@ function EventItem({ event, onClick }) {
             <div>
                 <div className="event-title">{event.title}</div>
                 <div className="event-desc">{event.description}</div>
-                <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <div style={{ marginTop: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
                     <CategoryBadge category={event.category} />
+                    <span className="badge badge-source">🌐 Source: {event.source}</span>
                     {event.geo_label && (
                         <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
                             📍 {event.geo_label}
@@ -737,192 +738,136 @@ export default function Dashboard() {
                     className="control-group"
                     style={{ alignSelf: "flex-end", marginLeft: "auto" }}
                 >
-                    <button className="btn btn-primary" onClick={loadData}>
-                        🔄 Refresh
+                    <button
+                        className="btn btn-primary"
+                        onClick={loadData}
+                        disabled={loading || isSearchingWeb}
+                        style={{ minWidth: "150px", opacity: (loading || isSearchingWeb) ? 0.8 : 1 }}
+                    >
+                        {(loading || isSearchingWeb) ? "⏳ Running..." : "▶ Run Report"}
                     </button>
                 </div>
             </div>
 
-            {/* Stat Cards */}
-            <div className="stats-grid">
-                <StatCard
-                    icon="📊"
-                    value={totalEvents}
-                    label="Total Events"
-                    color="var(--color-accent-cyan)"
-                />
-                <StatCard
-                    icon="🔴"
-                    value={highSeverityCount}
-                    label="High Impact"
-                    color="var(--color-accent-rose)"
-                />
-                <StatCard
-                    icon="📈"
-                    value={avgSeverity}
-                    label="Avg Impact"
-                    color="var(--color-accent-amber)"
-                />
-                <StatCard
-                    icon="📂"
-                    value={categoryCount}
-                    label="Categories"
-                    color="var(--color-accent-emerald)"
-                />
-            </div>
+            <div className="report-layout">
+                {/* Left Column: Events Timeline */}
+                <div className="report-content-left">
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <div className="card-title">Impact Timeline</div>
+                                <div className="card-subtitle">
+                                    Events that could influence YoY performance — sorted by most recent
+                                </div>
+                            </div>
+                            <span
+                                style={{
+                                    fontSize: "var(--font-size-sm)",
+                                    color: "var(--color-text-muted)",
+                                }}
+                            >
+                                {events.length} events
+                            </span>
+                        </div>
 
-            {/* Dashboard Grid */}
-            <div className="dashboard-grid">
-                {/* Category Distribution Chart */}
-                <div className="card">
-                    <div className="card-header">
-                        <div>
-                            <div className="card-title">Impact by Category</div>
-                            <div className="card-subtitle">
-                                Average impact score per event type
+                        {loading ? (
+                            <div className="event-list">
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div
+                                        key={i}
+                                        className="skeleton"
+                                        style={{ height: 80, width: "100%" }}
+                                    />
+                                ))}
+                            </div>
+                        ) : isSearchingWeb ? (
+                            <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
+                                <div className="spinner" style={{ fontSize: "2rem", animation: "spin 2s linear infinite" }}>🤖</div>
+                                <h3>Scanning Live Web...</h3>
+                                <p style={{ color: "var(--color-accent-amber)" }}>
+                                    Firing AI agents to analyze current web events. This may take 10-20 seconds.
+                                </p>
+                            </div>
+                        ) : events.length === 0 ? (
+                            <div className="empty-state">
+                                <div className="empty-icon">🔍</div>
+                                <h3>No events found</h3>
+                                <p>No local or live web data found for this date range and market.</p>
+                            </div>
+                        ) : (
+                            <div className="event-list">
+                                {events.map((event) => (
+                                    <EventItem
+                                        key={event.id}
+                                        event={event}
+                                        onClick={() => setSelectedEventId(event.id)}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right Column: Stats & Charts */}
+                <div className="report-content-right">
+                    {/* Stat Cards */}
+                    <div className="stats-grid">
+                        <StatCard icon="📊" value={totalEvents} label="Total Events" color="var(--color-accent-cyan)" />
+                        <StatCard icon="🔴" value={highSeverityCount} label="High Impact" color="var(--color-accent-rose)" />
+                        <StatCard icon="📈" value={avgSeverity} label="Avg Impact" color="var(--color-accent-amber)" />
+                        <StatCard icon="📂" value={categoryCount} label="Categories" color="var(--color-accent-emerald)" />
+                    </div>
+
+                    {/* Category Distribution Chart */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <div className="card-title">Impact by Category</div>
+                                <div className="card-subtitle">
+                                    Average impact score per event type
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="chart-container">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={barData} layout="vertical">
-                                <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    stroke="rgba(255,255,255,0.06)"
-                                />
-                                <XAxis
-                                    type="number"
-                                    domain={[0, 100]}
-                                    tick={{ fill: "#94a3b8", fontSize: 12 }}
-                                    tickFormatter={(v) => `${v}%`}
-                                />
-                                <YAxis
-                                    type="category"
-                                    dataKey="category"
-                                    width={130}
-                                    tick={{ fill: "#94a3b8", fontSize: 12 }}
-                                />
-                                <Tooltip
-                                    contentStyle={{
-                                        background: "#1e293b",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        borderRadius: 8,
-                                        color: "#f1f5f9",
-                                    }}
-                                    formatter={(value) => [`${value}%`, "Avg Impact"]}
-                                />
-                                <Bar
-                                    dataKey="severity"
-                                    radius={[0, 6, 6, 0]}
-                                    maxBarSize={28}
-                                >
-                                    {barData.map((entry, idx) => (
-                                        <Cell key={idx} fill={entry.fill} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Category Pie Chart */}
-                <div className="card">
-                    <div className="card-header">
-                        <div>
-                            <div className="card-title">Event Distribution</div>
-                            <div className="card-subtitle">By impact category</div>
+                        <div className="chart-container">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={barData} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                                    <XAxis type="number" domain={[0, 100]} tick={{ fill: "#94a3b8", fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
+                                    <YAxis type="category" dataKey="category" width={130} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                                    <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} formatter={(value) => [`${value}%`, "Avg Impact"]} />
+                                    <Bar dataKey="severity" radius={[0, 6, 6, 0]} maxBarSize={28}>
+                                        {barData.map((entry, idx) => (
+                                            <Cell key={idx} fill={entry.fill} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                    <div className="chart-container">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={55}
-                                    outerRadius={90}
-                                    paddingAngle={3}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {pieData.map((entry, idx) => (
-                                        <Cell key={idx} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        background: "#1e293b",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        borderRadius: 8,
-                                        color: "#f1f5f9",
-                                    }}
-                                />
-                                <Legend
-                                    iconType="circle"
-                                    iconSize={8}
-                                    wrapperStyle={{ fontSize: 12, color: "#94a3b8" }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
 
-            {/* Impact Timeline */}
-            <div className="card">
-                <div className="card-header">
-                    <div>
-                        <div className="card-title">Impact Timeline</div>
-                        <div className="card-subtitle">
-                            Events that could influence YoY performance — sorted by most recent
+                    {/* Category Pie Chart */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <div className="card-title">Event Distribution</div>
+                                <div className="card-subtitle">By impact category</div>
+                            </div>
+                        </div>
+                        <div className="chart-container">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="value" stroke="none">
+                                        {pieData.map((entry, idx) => (
+                                            <Cell key={idx} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} />
+                                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
+                                </PieChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                    <span
-                        style={{
-                            fontSize: "var(--font-size-sm)",
-                            color: "var(--color-text-muted)",
-                        }}
-                    >
-                        {events.length} events
-                    </span>
                 </div>
-
-                {loading ? (
-                    <div className="event-list">
-                        {[1, 2, 3, 4].map((i) => (
-                            <div
-                                key={i}
-                                className="skeleton"
-                                style={{ height: 80, width: "100%" }}
-                            />
-                        ))}
-                    </div>
-                ) : isSearchingWeb ? (
-                    <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
-                        <div className="spinner" style={{ fontSize: "2rem", animation: "spin 2s linear infinite" }}>🤖</div>
-                        <h3>Scanning Live Web...</h3>
-                        <p style={{ color: "var(--color-accent-amber)" }}>
-                            Firing AI agents to analyze current web events. This may take 10-20 seconds.
-                        </p>
-                    </div>
-                ) : events.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-icon">🔍</div>
-                        <h3>No events found</h3>
-                        <p>No local or live web data found for this date range and market.</p>
-                    </div>
-                ) : (
-                    <div className="event-list">
-                        {events.map((event) => (
-                            <EventItem
-                                key={event.id}
-                                event={event}
-                                onClick={() => setSelectedEventId(event.id)}
-                            />
-                        ))}
-                    </div>
-                )}
             </div>
 
             {selectedEventId && (

@@ -241,6 +241,35 @@ a:hover {
   animation: fadeIn 600ms var(--ease-out);
 }
 
+.report-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.report-content-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.report-content-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+  .report-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .main-content {
+    padding: var(--space-4);
+  }
+}
+
 @media (max-width: 768px) {
   .main-content {
     padding: var(--space-4);
@@ -564,6 +593,12 @@ a:hover {
   background: rgba(52, 211, 153, 0.12);
   color: #34d399;
   border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.badge-source {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* -------------------------------------------------------------------------- *
