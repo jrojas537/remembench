@@ -57,20 +57,6 @@ class IndustryConfig:
 #  Market Definitions
 # ---------------------------------------------------------------------------
 
-# Major US metro areas for wireless retail analysis
-WIRELESS_MARKETS = [
-    Market("New York City", 40.7128, -74.0060),
-    Market("Los Angeles", 34.0522, -118.2437),
-    Market("Chicago", 41.8781, -87.6298),
-    Market("Houston", 29.7604, -95.3698),
-    Market("Dallas", 32.7767, -96.7970),
-    Market("Philadelphia", 39.9526, -75.1652),
-    Market("Miami", 25.7617, -80.1918),
-    Market("Atlanta", 33.7490, -84.3880),
-    Market("Phoenix", 33.4484, -112.0740),
-    Market("Seattle", 47.6062, -122.3321),
-]
-
 # Detroit metro area + key Michigan cities for pizza analysis
 PIZZA_MARKETS = [
     Market("Detroit Metro", 42.3314, -83.0458),
@@ -89,15 +75,6 @@ PIZZA_MARKETS = [
 # ---------------------------------------------------------------------------
 #  GDELT Query Sets
 # ---------------------------------------------------------------------------
-
-WIRELESS_GDELT_QUERIES = [
-    "wireless store OR cell phone store OR mobile retail",
-    "(T-Mobile OR Verizon OR AT&T) (promotion OR deal OR offer OR \"limited time\")",
-    "network outage OR service disruption OR cellular outage",
-    "store closure OR retail closure OR power outage",
-    "protest OR demonstration OR road closure OR parade",
-    "(iPhone OR Galaxy OR Pixel) launch OR availability OR pre-order",
-]
 
 PIZZA_GDELT_QUERIES = [
     '"pizza restaurant" OR "pizzeria" OR "pizza shop" (promotion OR deal OR coupon)',
@@ -161,10 +138,6 @@ UNIVERSAL_CATEGORIES = [
     "weather", "holiday", "news",
 ]
 
-WIRELESS_CATEGORIES = UNIVERSAL_CATEGORIES + [
-    "competitor_promo", "outage", "internal_promo", "system_issue",
-]
-
 PIZZA_CATEGORIES = UNIVERSAL_CATEGORIES + [
     "competitor_promo", "delivery_disruption", "food_safety",
     "supply_chain", "labor", "local_event",
@@ -176,28 +149,6 @@ PIZZA_CATEGORIES = UNIVERSAL_CATEGORIES + [
 # ---------------------------------------------------------------------------
 
 INDUSTRIES: dict[str, IndustryConfig] = {
-    # === WIRELESS RETAIL ===
-    "wireless_retail": IndustryConfig(
-        key="wireless_retail",
-        label="Wireless Retail",
-        icon="📱",
-        description="Cellphone stores, carrier retail, and mobile device sales",
-        group="wireless",
-        markets=WIRELESS_MARKETS,
-        gdelt_queries=WIRELESS_GDELT_QUERIES,
-        rss_feeds=WIRELESS_RSS_FEEDS,
-        categories=WIRELESS_CATEGORIES,
-        category_labels={
-            "weather": "Weather Impact",
-            "holiday": "Holiday",
-            "news": "News / Local Event",
-            "competitor_promo": "Competitor Promotion",
-            "outage": "Network / Service Outage",
-            "internal_promo": "Internal Promotion",
-            "system_issue": "System Issue",
-        },
-    ),
-
     # === PIZZA (ALL) ===
     "pizza_all": IndustryConfig(
         key="pizza_all",

@@ -25,19 +25,6 @@ import {
  * ------------------------------------------------------------------ */
 
 const FALLBACK_INDUSTRIES = {
-    wireless_retail: {
-        label: "Wireless Retail",
-        icon: "📱",
-        group: "wireless",
-        markets: [
-            "New York City", "Los Angeles", "Chicago", "Houston",
-            "Dallas", "Philadelphia", "Miami", "Atlanta", "Phoenix", "Seattle",
-        ],
-        categories: [
-            "weather", "competitor_promo", "outage", "holiday", "news",
-            "internal_promo", "system_issue",
-        ],
-    },
     pizza_all: {
         label: "Pizza (ALL)",
         icon: "🍕",
@@ -403,17 +390,10 @@ export default function Dashboard() {
     const [startDate, setStartDate] = useState(defaultStart);
     const [endDate, setEndDate] = useState(defaultEnd);
 
-    // Apply user preferences on load
+    // Ensure dashboard starts scrolled to the top
     useEffect(() => {
-        if (user?.preferences) {
-            if (user.preferences.default_industry) {
-                setIndustry(user.preferences.default_industry);
-            }
-            if (user.preferences.default_market) {
-                setGeoFilter(user.preferences.default_market);
-            }
-        }
-    }, [user]);
+        window.scrollTo(0, 0);
+    }, []);
 
     // Fetch industry registry on mount
     useEffect(() => {
@@ -493,7 +473,6 @@ export default function Dashboard() {
 
             const [eventsRes, statsRes] = await Promise.all([
                 fetch(`${API_BASE}/events/?${params}`, { headers }).then((r) => {
-                    // 401 unauth will fall through to demo data gracefully if required
                     if (!r.ok) throw new Error("API unavailable");
                     return r.json();
                 }),
@@ -506,7 +485,12 @@ export default function Dashboard() {
                 }),
             ]);
 
-            if (eventsRes.length === 0 && !isDemo) {
+            // Show immediate results from DB if any exist (e.g. weather)
+            setEvents(eventsRes || []);
+            setStats(statsRes || { categories: {} });
+            setLoading(false);
+
+            if (!isDemo) {
                 setIsSearchingWeb(true);
                 try {
                     const runParams = new URLSearchParams();
@@ -520,23 +504,18 @@ export default function Dashboard() {
                         headers
                     });
 
-                    // Re-fetch data after ingestion finishes
+                    // Re-fetch data after ingestion finishes (now with new web events)
                     const [newEventsRes, newStatsRes] = await Promise.all([
                         fetch(`${API_BASE}/events/?${params}`, { headers }).then((r) => r.json()),
                         fetch(`${API_BASE}/events/stats/summary?${statsParams}`, { headers }).then((r) => r.json()),
                     ]);
-                    setEvents(newEventsRes);
-                    setStats(newStatsRes);
+                    setEvents(newEventsRes || []);
+                    setStats(newStatsRes || { categories: {} });
                 } catch (e) {
                     console.error("Live web search failed:", e);
-                    setEvents([]);
-                    setStats({ categories: {} });
                 } finally {
                     setIsSearchingWeb(false);
                 }
-            } else {
-                setEvents(eventsRes);
-                setStats(statsRes);
             }
             setIsDemo(false);
         } catch {
@@ -778,20 +757,20 @@ export default function Dashboard() {
                                     />
                                 ))}
                             </div>
-                        ) : isSearchingWeb ? (
-                            <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
-                                <div className="spinner" style={{ fontSize: "2rem", animation: "spin 2s linear infinite" }}>🤖</div>
-                                <h3>Scanning Live Web...</h3>
-                                <p style={{ color: "var(--color-accent-amber)" }}>
-                                    Firing AI agents to analyze current web events. This may take 10-20 seconds.
-                                </p>
-                            </div>
                         ) : !hasRun ? (
                             <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
                                 <div className="empty-icon" style={{ fontSize: "3rem", marginBottom: "1rem" }}>👋</div>
                                 <h3>Ready to analyze</h3>
                                 <p style={{ color: "var(--color-text-muted)" }}>
                                     Select your parameters and click "Run Report" to gather insights.
+                                </p>
+                            </div>
+                        ) : isSearchingWeb && events.length === 0 ? (
+                            <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
+                                <div className="spinner" style={{ fontSize: "2rem", animation: "spin 2s linear infinite" }}>🤖</div>
+                                <h3>Scanning Live Web...</h3>
+                                <p style={{ color: "var(--color-accent-amber)" }}>
+                                    Firing AI agents to analyze current web events. This may take 10-20 seconds.
                                 </p>
                             </div>
                         ) : events.length === 0 ? (
@@ -801,7 +780,25 @@ export default function Dashboard() {
                                 <p>No local or live web data found for this date range and market.</p>
                             </div>
                         ) : (
-                            <div className="event-list">
+                            <div className="event-list" style={{ position: "relative" }}>
+                                {isSearchingWeb && (
+                                    <div style={{
+                                        padding: "1rem",
+                                        borderRadius: "var(--radius-lg)",
+                                        background: "rgba(56, 189, 248, 0.08)",
+                                        border: "1px solid rgba(56, 189, 248, 0.2)",
+                                        color: "var(--color-accent-cyan)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                        fontSize: "0.875rem",
+                                        marginBottom: "1rem"
+                                    }}>
+                                        <span className="spinner" style={{ animation: "spin 2s linear infinite" }}>🤖</span>
+                                        <strong>Combining live web events with local weather...</strong>
+                                        <span style={{ marginLeft: "auto", opacity: 0.7 }}>~10-20s remaining</span>
+                                    </div>
+                                )}
                                 {events.map((event) => (
                                     <EventItem
                                         key={event.id}
