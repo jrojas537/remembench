@@ -50,7 +50,7 @@ async def _get_period_events(
     query = select(ImpactEvent).where(
         and_(
             ImpactEvent.industry == industry,
-            ImpactEvent.start_date >= start,
+            ImpactEvent.end_date >= start,
             ImpactEvent.start_date <= end,
         )
     )

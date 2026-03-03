@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
 
     # --- CORS ---
-    cors_origins: list[str] = [
+    cors_origins: str | list[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]

@@ -110,7 +110,7 @@ async def list_events(
             (ImpactEvent.geo_label == "National")
         )
     if start_date:
-        query = query.where(ImpactEvent.start_date >= start_date)
+        query = query.where(ImpactEvent.end_date >= start_date)
     if end_date:
         query = query.where(ImpactEvent.start_date <= end_date)
 
@@ -140,7 +140,7 @@ async def event_stats(
         .where(ImpactEvent.industry == industry)
     )
     if start_date:
-        stmt = stmt.where(ImpactEvent.start_date >= start_date)
+        stmt = stmt.where(ImpactEvent.end_date >= start_date)
     if end_date:
         stmt = stmt.where(ImpactEvent.start_date <= end_date)
     if geo_label:
