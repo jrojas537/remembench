@@ -353,6 +353,7 @@ export default function Dashboard() {
     const [categoryFilter, setCategoryFilter] = useState("");
     const [isDemo, setIsDemo] = useState(false);
     const [isSearchingWeb, setIsSearchingWeb] = useState(false);
+    const [searchResultMsg, setSearchResultMsg] = useState(null);
     const [selectedEventId, setSelectedEventId] = useState(null);
 
     const { defaultStart, defaultEnd } = useMemo(() => {
@@ -431,6 +432,7 @@ export default function Dashboard() {
     const loadData = useCallback(async () => {
         setLoading(true);
         setHasRun(true);
+        setSearchResultMsg(null);
         try {
             // Setup parameters
             const isPremium = user?.tier === "pro";
@@ -509,10 +511,23 @@ export default function Dashboard() {
                         fetch(`${API_BASE}/events/?${params}`, { headers }).then((r) => r.json()),
                         fetch(`${API_BASE}/events/stats/summary?${statsParams}`, { headers }).then((r) => r.json()),
                     ]);
+
+                    const newEventsCount = newEventsRes?.length || 0;
+                    const oldEventsCount = eventsRes?.length || 0;
+                    if (newEventsCount <= oldEventsCount) {
+                        setSearchResultMsg("Live web search complete. No new events found.");
+                        setTimeout(() => setSearchResultMsg(null), 5000);
+                    } else {
+                        setSearchResultMsg(`Found ${newEventsCount - oldEventsCount} new events from the web!`);
+                        setTimeout(() => setSearchResultMsg(null), 4000);
+                    }
+
                     setEvents(newEventsRes || []);
                     setStats(newStatsRes || { categories: {} });
                 } catch (e) {
                     console.error("Live web search failed:", e);
+                    setSearchResultMsg("Web search timed out or encountered an error.");
+                    setTimeout(() => setSearchResultMsg(null), 5000);
                 } finally {
                     setIsSearchingWeb(false);
                 }
@@ -796,7 +811,25 @@ export default function Dashboard() {
                                     }}>
                                         <span className="spinner" style={{ animation: "spin 2s linear infinite" }}>🤖</span>
                                         <strong>Combining live web events with local weather...</strong>
-                                        <span style={{ marginLeft: "auto", opacity: 0.7 }}>~10-20s remaining</span>
+                                        <span style={{ marginLeft: "auto", opacity: 0.7 }}>Checking news & promos</span>
+                                    </div>
+                                )}
+                                {searchResultMsg && (
+                                    <div style={{
+                                        padding: "1rem",
+                                        borderRadius: "var(--radius-lg)",
+                                        background: "rgba(167, 139, 250, 0.08)",
+                                        border: "1px solid rgba(167, 139, 250, 0.2)",
+                                        color: "var(--color-accent-purple)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "0.75rem",
+                                        fontSize: "0.875rem",
+                                        marginBottom: "1rem",
+                                        animation: "fadeIn 0.3s ease-out"
+                                    }}>
+                                        <span style={{ fontSize: "1.2rem" }}>ℹ️</span>
+                                        <strong>{searchResultMsg}</strong>
                                     </div>
                                 )}
                                 {events.map((event) => (
