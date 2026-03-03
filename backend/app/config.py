@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.0-flash"
     anthropic_api_key: str = ""
-    anthropic_model: str = "claude-3-5-haiku-20241022"
+    anthropic_model: str = "claude-3-haiku-20240307"
 
     embedding_model: str = "all-MiniLM-L6-v2"
     chroma_persist_dir: str = "./data/chromadb"
