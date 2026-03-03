@@ -40,4 +40,10 @@ else
 fi
 
 echo ""
+echo "🔄 [5/5] Restarting Nginx to clear IP cache..."
+sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
+  "cd ${VPS_DIR} && echo '${VPS_PASS}' | sudo -S docker compose restart nginx"
+echo "✅ Nginx restarted"
+
+echo ""
 echo "🚀 Deploy complete! App live at http://${VPS_HOST}/"
