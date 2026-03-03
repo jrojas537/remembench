@@ -433,6 +433,7 @@ export default function Dashboard() {
         setLoading(true);
         setHasRun(true);
         setSearchResultMsg(null);
+        setCategoryFilter(""); // Un-pin category filter so new web events aren't hidden
         try {
             // Setup parameters
             const isPremium = user?.tier === "pro";
