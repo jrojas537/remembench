@@ -108,7 +108,7 @@ class GdeltAdapter(BaseAdapter):
         }
 
         try:
-            data = await self._http_get(self.base_url, params=params)
+            data = await self._http_get(self.base_url, params=params, timeout=10.0)
         except Exception as exc:
             self.logger.warning("gdelt_search_failed", query=query, error=str(exc))
             return []
