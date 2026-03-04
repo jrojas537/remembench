@@ -263,11 +263,9 @@ class IngestionService:
                     "raw_payload": event.raw_payload,
                 }
 
-                # PostGIS geography — must be set via SQL function
+                # PostGIS geography — parse natively via EWKT string
                 if event.latitude is not None and event.longitude is not None:
-                    row["geography"] = ST_SetSRID(
-                        ST_MakePoint(event.longitude, event.latitude), 4326
-                    )
+                    row["geography"] = f"SRID=4326;POINT({event.longitude} {event.latitude})"
 
                 values.append(row)
 
