@@ -58,3 +58,37 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
                 "category": "competitor_promo",
                 "summary": text[:200]
             }
+
+    async def generate_executive_briefing(self, events: list[dict], industry: str) -> str:
+        """
+        Reads a list of events and synthesizes a high-level strategic brief.
+        """
+        if not events:
+            return "No events found in the current timeframe to analyze."
+
+        # Truncate to reasonable limits to avoid token overflow
+        event_texts = []
+        for e in events[:50]:
+            title = e.get('title', 'Unknown')
+            cat = e.get('category', 'Unknown')
+            sev = e.get('severity', 0)
+            desc = e.get('description', '')[:200]
+            event_texts.append(f"[{cat} - Severity: {sev}] {title}: {desc}")
+
+        payload = "\n".join(event_texts)
+
+        system_prompt = f"""You are a Chief Strategy Officer for the '{industry}' industry.
+You are scanning the following list of recent impact events. 
+Synthesize these events into a 2-3 sentence 'Executive Briefing'.
+Do NOT list individual events. Instead, identify the macro trends.
+Are competitors launching new features? Is weather disrupting supply chains? Is sentiment negative?
+Highlight the most critical insights and end with a 1-sentence recommendation.
+Respond ONLY with the plain text briefing. Do not use markdown formatting.
+        """
+
+        try:
+            response_text = await self.llm.complete(system=system_prompt, user=payload)
+            return response_text.strip()
+        except Exception as e:
+            logger.error("llm_briefing_failed", error=str(e))
+            return "Unable to generate AI briefing at this time due to an LLM service error."

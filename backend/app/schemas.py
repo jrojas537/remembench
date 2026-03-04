@@ -12,6 +12,7 @@ Schema hierarchy:
 
 import uuid
 from datetime import datetime
+from typing import List, Dict, Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -201,3 +202,10 @@ class HealthResponse(BaseModel):
     status: str = "ok"
     version: str = "0.2.0"
     database: str = "unknown"
+
+class AIBriefingRequest(BaseModel):
+    industry: str
+    events: List[Dict[str, Any]]
+
+class AIBriefingResponse(BaseModel):
+    briefing: str

@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.logging import get_logger
 from app.models import ImpactEvent
-from app.schemas import ImpactEventCreate, ImpactEventResponse
+from app.schemas import ImpactEventCreate, ImpactEventResponse, AIBriefingRequest, AIBriefingResponse
 from app.auth import require_api_key
 
 logger = get_logger("routes.events")
@@ -164,6 +164,16 @@ async def event_stats(
         },
     }
 
+@router.post("/briefing", response_model=AIBriefingResponse, dependencies=[Depends(require_api_key)])
+async def get_executive_briefing(request: AIBriefingRequest) -> dict:
+    """
+    Generate an AI Executive Briefing from a list of events.
+    """
+    from app.services.classification import ClassificationService
+    classifier = ClassificationService()
+    
+    briefing_text = await classifier.generate_executive_briefing(request.events, request.industry)
+    return {"briefing": briefing_text}
 
 @router.get("/{event_id}", response_model=ImpactEventResponse, dependencies=[Depends(require_api_key)])
 async def get_event(
