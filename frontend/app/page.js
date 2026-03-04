@@ -17,6 +17,8 @@ import {
     Pie,
     Cell,
     Legend,
+    LineChart,
+    Line,
 } from "recharts";
 
 /* ------------------------------------------------------------------ *
@@ -355,6 +357,17 @@ export default function Dashboard() {
     const [isSearchingWeb, setIsSearchingWeb] = useState(false);
     const [searchResultMsg, setSearchResultMsg] = useState(null);
     const [selectedEventId, setSelectedEventId] = useState(null);
+    const [aiBriefing, setAiBriefing] = useState(null);
+    const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
+
+    // AI briefing wrapper logic for better markdown rendering
+    const formattedBriefing = useMemo(() => {
+        if (!aiBriefing) return null;
+        // Simple logic to convert **bold** text effectively since we aren't using a full markdown parser library here
+        let html = aiBriefing.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\ng/, "<br/>");
+        return html;
+    }, [aiBriefing]);
 
     const { defaultStart, defaultEnd } = useMemo(() => {
         // Find equivalent weekend map from 2026 -> 2025
@@ -525,6 +538,29 @@ export default function Dashboard() {
 
                     setEvents(newEventsRes || []);
                     setStats(newStatsRes || { categories: {} });
+
+                    // Generate AI Briefing
+                    setIsGeneratingBriefing(true);
+                    try {
+                        const briefRes = await fetch(`${API_BASE}/events/briefing`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                ...headers
+                            },
+                            body: JSON.stringify({
+                                industry: industry,
+                                events: newEventsRes || []
+                            })
+                        });
+                        const briefData = await briefRes.json();
+                        setAiBriefing(briefData.briefing);
+                    } catch (e) {
+                        console.error("AI Briefing failed:", e);
+                        setAiBriefing("Could not generate briefing at this time.");
+                    } finally {
+                        setIsGeneratingBriefing(false);
+                    }
                 } catch (e) {
                     console.error("Live web search failed:", e);
                     setSearchResultMsg("Web search timed out or encountered an error.");
@@ -621,6 +657,30 @@ export default function Dashboard() {
             fill: CATEGORY_COLORS[cat] || "#64748b",
         }))
         : [];
+
+    const trendData = useMemo(() => {
+        if (!events || events.length === 0) return [];
+        // Group by YYYY-MM-DD
+        const groups = {};
+        events.forEach(e => {
+            const d = e.start_date.split('T')[0];
+            groups[d] = (groups[d] || 0) + 1;
+        });
+        // Sort chronologically and format
+        return Object.keys(groups).sort().map(d => {
+            const dateObj = new Date(d + 'T12:00:00Z');
+            return {
+                date: dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                count: groups[d]
+            };
+        });
+    }, [events]);
+
+    const handleSaveView = useCallback(() => {
+        // In a real app, this would hit a backend endpoint to save to user's profile.
+        // For now, we simulate a success state via alert.
+        alert(`Saved View:\nIndustry: ${activeIndustries[industry]?.label}\nMarket: ${geoFilter || "All Markets"}\nDates: ${startDate} to ${endDate}`);
+    }, [industry, geoFilter, startDate, endDate, activeIndustries]);
 
     return (
         <>
@@ -772,6 +832,16 @@ export default function Dashboard() {
                 >
                     <button
                         className="btn"
+                        onClick={handleSaveView}
+                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "rgba(99, 102, 241, 0.15)", color: "var(--color-accent-indigo)", cursor: "pointer", fontWeight: "600", transition: "background 0.2s" }}
+                        title="Save this view to your profile"
+                        onMouseOver={e => e.currentTarget.style.background = "rgba(99, 102, 241, 0.25)"}
+                        onMouseOut={e => e.currentTarget.style.background = "rgba(99, 102, 241, 0.15)"}
+                    >
+                        🔖 Save View
+                    </button>
+                    <button
+                        className="btn"
                         onClick={handleExportCSV}
                         disabled={loading || isSearchingWeb || events.length === 0}
                         style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "rgba(255,255,255,0.05)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
@@ -800,6 +870,42 @@ export default function Dashboard() {
             </div>
 
             <div className="report-layout">
+                {/* AI Executive Briefing Banner */}
+                {hasRun && (events.length > 0 || isGeneratingBriefing) && !isDemo && (
+                    <div style={{
+                        gridColumn: "1 / -1",
+                        background: "rgba(13, 19, 33, 0.8)",
+                        backdropFilter: "blur(16px)",
+                        border: "1px solid rgba(34, 211, 238, 0.3)",
+                        boxShadow: "0 0 20px rgba(34, 211, 238, 0.1)",
+                        borderRadius: "1rem",
+                        padding: "1.5rem",
+                        display: "flex",
+                        gap: "1rem",
+                        alignItems: "flex-start",
+                        animation: "fadeInUp 500ms ease-out"
+                    }}>
+                        <div style={{ fontSize: "1.5rem", animation: isGeneratingBriefing ? "spin 2s linear infinite" : "none" }}>
+                            {isGeneratingBriefing ? "🤖" : "⚙️"}
+                        </div>
+                        <div>
+                            <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--color-accent-cyan)", fontSize: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                AI Executive Briefing
+                                {isGeneratingBriefing && <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", fontWeight: "normal" }}>Synthesizing {events.length} events...</span>}
+                            </h3>
+                            {isGeneratingBriefing ? (
+                                <p style={{ margin: 0, color: "var(--color-text-muted)", lineHeight: "1.6", fontSize: "0.95rem" }}>
+                                    Analyzing market trends, competitive actions, and environmental disruptions...
+                                </p>
+                            ) : formattedBriefing ? (
+                                <p style={{ margin: 0, color: "var(--color-text-primary)", lineHeight: "1.6", fontSize: "0.95rem" }} dangerouslySetInnerHTML={{ __html: formattedBriefing }} />
+                            ) : (
+                                <p style={{ margin: 0, color: "var(--color-text-muted)", lineHeight: "1.6", fontSize: "0.95rem" }}>No briefing available for this context.</p>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Left Column: Events Timeline */}
                 <div className="report-content-left">
                     <div className="card">
@@ -910,6 +1016,29 @@ export default function Dashboard() {
                         <StatCard icon="🔴" value={highSeverityCount} label="High Impact" color="var(--color-accent-rose)" />
                         <StatCard icon="📈" value={avgSeverity} label="Avg Impact" color="var(--color-accent-amber)" />
                         <StatCard icon="📂" value={categoryCount} label="Categories" color="var(--color-accent-emerald)" />
+                    </div>
+
+                    {/* Event Velocity Trend */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <div className="card-title">Event Velocity</div>
+                                <div className="card-subtitle">
+                                    Volume of events over the selected period
+                                </div>
+                            </div>
+                        </div>
+                        <div className="chart-container" style={{ height: "200px" }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={trendData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                                    <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                    <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} />
+                                    <Line type="monotone" dataKey="count" stroke="var(--color-accent-indigo)" strokeWidth={3} dot={{ r: 4, fill: "var(--color-bg-card)", strokeWidth: 2, stroke: "var(--color-accent-indigo)" }} activeDot={{ r: 6 }} name="Event Count" />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
 
                     {/* Category Distribution Chart */}
