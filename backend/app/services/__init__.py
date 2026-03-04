@@ -264,29 +264,23 @@ class IngestionService:
                     "raw_payload": event.raw_payload,
                 }
 
+                # PostGIS geography — standard EWKT string for executemany binding
+                if event.latitude is not None and event.longitude is not None:
+                    row["geography"] = f"SRID=4326;POINT({event.longitude} {event.latitude})"
+
                 values.append(row)
 
+            # Do not use .values(values) as it embeds into AST and breaks Geometry types.
+            # Instead, pass parameters natively into execute.
             stmt = (
                 pg_insert(ImpactEvent)
-                .values(values)
                 .on_conflict_do_nothing(
                     index_elements=["source", "source_id"],
                     index_where=text("source_id IS NOT NULL"),
                 )
             )
-            result = await db.execute(stmt)
+            result = await db.execute(stmt, values)
             inserted_count += result.rowcount
-
-        # Fix Geography columns asyncpg defect
-        await db.execute(
-            text(
-                """
-                UPDATE impact_events
-                SET geography = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
-                WHERE geography IS NULL AND longitude IS NOT NULL AND latitude IS NOT NULL
-                """
-            )
-        )
 
         await db.commit()
         return inserted_count
