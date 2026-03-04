@@ -47,6 +47,7 @@ async def run_ingestion(
             detail="end_date must be after start_date",
         )
 
+    # Resolve bounding coordinates dynamically if a geo_label market was passed
     if geo_label and industry and (latitude is None or longitude is None):
         try:
             from app.industries import get_all_markets
@@ -59,6 +60,25 @@ async def run_ingestion(
         except Exception as e:
             logger.warning(f"Could not lookup coordinates for {geo_label}: {e}")
 
+    # =========================================================================
+    # Tier 2 Optimization: Global Idempotent Caching
+    # =========================================================================
+    from app.cache import get_redis
+    redis_client_generator = get_redis()
+    redis_client = await anext(redis_client_generator)
+    
+    # Construct a unique fingerprint for this exact ingestion request
+    cache_key = f"ingestion:{start_date.strftime('%Y%m%d')}:{end_date.strftime('%Y%m%d')}:{industry}:{geo_label or 'global'}"
+    
+    try:
+        cached_result = await redis_client.get(cache_key)
+        if cached_result:
+            import json
+            logger.info(f"Ingestion cache hit for {cache_key} - skipping external adapters.")
+            return json.loads(cached_result)
+    except Exception as e:
+        logger.warning(f"Redis cache check failed: {e}")
+
     service = IngestionService()
     result = await service.ingest(
         db=db,
@@ -69,6 +89,30 @@ async def run_ingestion(
         longitude=longitude,
         geo_label=geo_label,
     )
+    
+    # Store successful run in cache
+    try:
+        import json
+        
+        # Calculate dynamic cache expiration based on how old the data is
+        import datetime as dt
+        today = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+        
+        # Strip tzinfo for naive comparison if needed
+        end_dt_naive = end_date.replace(tzinfo=None)
+        days_ago = (today - end_dt_naive).days
+        
+        if days_ago > 14:
+            # Historical dataset - won't change, cache permanently
+            await redis_client.set(cache_key, json.dumps(result))
+            logger.info(f"Permanently cached historical ingestion: {cache_key}")
+        else:
+            # Recent/Future dataset - might update, cache for 4 hours
+            await redis_client.setex(cache_key, 14400, json.dumps(result))
+            logger.info(f"Cached active ingestion for 4 hours: {cache_key}")
+    except Exception as e:
+        logger.warning(f"Failed to write to Redis cache: {e}")
+        
     return result
 
 

@@ -80,13 +80,27 @@ class WebSearchAdapter(BaseAdapter):
         # 1. Try Tavily (Best structured output for LLMs)
         if self.tavily_client:
             try:
-                logger.info(f"Attempting Tavily search for: {query}")
-                response = await self.tavily_client.search(
-                    query=query, 
-                    search_depth="advanced",
-                    max_results=limit,
-                    include_answer=False
-                )
+                # Add Tier 3: HTTP Adapter level caching
+                import json
+                from app.cache import get_redis
+                redis_pool = get_redis()
+                rd = await anext(redis_pool)
+                tavily_cache_key = f"tavily:search:{hashlib.md5(query.encode()).hexdigest()}"
+                
+                cached = await rd.get(tavily_cache_key)
+                if cached:
+                    logger.info(f"Tavily Cache HIT for: {query}")
+                    response = json.loads(cached)
+                else:
+                    logger.info(f"Attempting Tavily search for: {query}")
+                    response = await self.tavily_client.search(
+                        query=query, 
+                        search_depth="advanced",
+                        max_results=limit,
+                        include_answer=False
+                    )
+                    # Cache successful Tavily payloads for 2 weeks to suppress redundant billing
+                    await rd.setex(tavily_cache_key, 1209600, json.dumps(response))
                 
                 for res in response.get("results", []):
                     raw_results.append({
@@ -102,20 +116,39 @@ class WebSearchAdapter(BaseAdapter):
         # 2. Try Exa if Tavily failed to find anything or crashed
         if not raw_results and self.exa_client:
             try:
-                logger.info(f"Attempting Exa search for: {query}")
-                loop = asyncio.get_running_loop()
-                response = await loop.run_in_executor(
-                    None, 
-                    lambda: self.exa_client.search_and_contents(
-                        query,
-                        num_results=limit,
-                        use_autoprompt=True,
-                        start_published_date=start_str,
-                        end_published_date=end_str
-                    )
-                )
+                import json
+                from app.cache import get_redis
+                redis_pool = get_redis()
+                rd = await anext(redis_pool)
+                exa_cache_key = f"exa:search:{hashlib.md5(query.encode()).hexdigest()}"
                 
-                for res in response.results:
+                cached = await rd.get(exa_cache_key)
+                all_res = []
+                
+                if cached:
+                    logger.info(f"Exa Cache HIT for: {query}")
+                    cached_data = json.loads(cached)
+                    class FauxResult:
+                        def __init__(self, t, tx, u): self.title = t; self.text = tx; self.url = u
+                    all_res = [FauxResult(r['title'], r['text'], r['url']) for r in cached_data]
+                else:
+                    logger.info(f"Attempting Exa search for: {query}")
+                    loop = asyncio.get_running_loop()
+                    response = await loop.run_in_executor(
+                        None, 
+                        lambda: self.exa_client.search_and_contents(
+                            query,
+                            num_results=limit,
+                            use_autoprompt=True,
+                            start_published_date=start_str,
+                            end_published_date=end_str
+                        )
+                    )
+                    all_res = response.results
+                    cacheable = [{"title": r.title, "text": r.text, "url": r.url} for r in all_res]
+                    await rd.setex(exa_cache_key, 1209600, json.dumps(cacheable))
+                
+                for res in all_res:
                     raw_results.append({
                         "network": "exa",
                         "original_text": f"Title: {res.title}\nContent: {res.text[:1000] if res.text else ''}", 
