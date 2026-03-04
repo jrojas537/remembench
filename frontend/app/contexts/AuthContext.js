@@ -37,6 +37,7 @@ export function AuthProvider({ children }) {
             // Option: Redirect to login if on protected route?
             // Currently, dashboard works in 'preview' mode without auth
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchCurrentUser = async (authToken) => {

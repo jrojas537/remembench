@@ -15,6 +15,7 @@ Currently supported:
 
 from __future__ import annotations
 
+from datetime import datetime
 from dataclasses import dataclass, field
 
 
@@ -259,3 +260,19 @@ def get_gdelt_queries(industry_key: str) -> list[str]:
 def get_rss_feeds(industry_key: str) -> list[RSSFeed]:
     """Return RSS feeds for a given industry."""
     return get_industry(industry_key).rss_feeds
+
+
+def get_web_search_query(industry_key: str, start_date: datetime, end_date: datetime) -> str:
+    """Return the targeted search terms for web search adapters based on the industry and time period."""
+    if industry_key.startswith("pizza"):
+        if start_date.month == 3 or end_date.month == 3:
+            return '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "Pi Day" OR "3.14")'
+        return '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") (promotion OR discount OR deal OR coupon OR BOGO OR offer)'
+    
+    if industry_key.startswith("wireless"):
+        return '("cell phone" OR "wireless store" OR "T-Mobile" OR Verizon OR "AT&T") (promotion OR "new iPhone" OR "device launch" OR "network outage" OR "5g rollout" OR "switch deal" OR "trade-in offer")'
+    
+    # Generic fallback
+    label = get_industry(industry_key).label
+    return f'{label.replace(" ", " ")} AND (news OR event OR promotion OR disruption)'
+
