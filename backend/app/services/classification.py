@@ -82,7 +82,7 @@ Each object in the array must match this schema:
     "confidence": float, // 0.0 to 1.0 (How certain are you this event actually happened and is relevant)
     "category": string, // e.g., "weather", "macro_economic", "competitor_action", "supply_chain", "holiday", "local_event", "sports"
     "subcategory": string, // e.g., "bogo_promo", "network_outage", "winter_storm", "price_hike"
-    "summary": string, // A clear, 1-2 sentence description of the event
+    "summary": string, // A clear, 1-2 sentence description of the event. IF this is a promotion or deal, you MUST include the exact price, discount amount, or promotion specifics here.
     "details": {{
         "competitor_name": string | null, // Name of the competitor if mentioned (e.g., "Verizon", "Dominos")
         "promotion_details": string | null, // Specifics of a deal (e.g., "50% off", "iPhone 15 BOGO")
