@@ -97,7 +97,9 @@ async def list_events(
     Returns events sorted by date (newest first) for the specified
     industry. Supports filtering by category, source, market, and date range.
     """
-    query = select(ImpactEvent).where(ImpactEvent.industry == industry)
+    from app.industries import get_related_industry_keys
+    related_keys = get_related_industry_keys(industry)
+    query = select(ImpactEvent).where(ImpactEvent.industry.in_(related_keys))
 
     if category:
         query = query.where(ImpactEvent.category == category)
@@ -118,26 +120,27 @@ async def list_events(
 
 # NOTE: /stats/summary must come BEFORE /{event_id} — see module docstring.
 @router.get("/stats/summary")
-async def event_stats(
+async def anomaly_stats(
     industry: str = Query("wireless_retail", description="Industry vertical"),
     start_date: datetime | None = Query(None, description="Filter events on or after this date"),
     end_date: datetime | None = Query(None, description="Filter events on or before this date"),
+    geo_label: str | None = Query(None, description="Filter by market name (includes National)"),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
-    Get summary statistics of impact events per category.
-
-    Returns counts and average severity per category for the
-    specified industry and optional date range — used by the
-    dashboard stat cards.
+    Get summary statistics of anomaly events by subcategory to show which specific 
+    causes are driving unusual friction.
     """
+    from app.industries import get_related_industry_keys
+    related_keys = get_related_industry_keys(industry)
+    
     stmt = (
         select(
             ImpactEvent.category,
             func.count(ImpactEvent.id).label("count"),
             func.avg(ImpactEvent.severity).label("avg_severity"),
         )
-        .where(ImpactEvent.industry == industry)
+        .where(ImpactEvent.industry.in_(related_keys))
     )
     if start_date:
         stmt = stmt.where(ImpactEvent.start_date >= start_date)

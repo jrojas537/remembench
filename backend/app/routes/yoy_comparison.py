@@ -47,9 +47,12 @@ async def _get_period_events(
     Supports optional geographic and category filtering.
     Results are sorted chronologically.
     """
+    from app.industries import get_related_industry_keys
+    related_keys = get_related_industry_keys(industry)
+    
     query = select(ImpactEvent).where(
         and_(
-            ImpactEvent.industry == industry,
+            ImpactEvent.industry.in_(related_keys),
             ImpactEvent.end_date >= start,
             ImpactEvent.start_date <= end,
         )
