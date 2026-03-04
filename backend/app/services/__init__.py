@@ -87,13 +87,17 @@ class IngestionService:
         # Run all adapters in parallel — they are independent HTTP calls
         async def _run_adapter(adapter: BaseAdapter) -> list[ImpactEventCreate]:
             try:
-                events = await adapter.fetch_events(
-                    start_date=start_date,
-                    end_date=end_date,
-                    industry=industry,
-                    latitude=latitude,
-                    longitude=longitude,
-                    geo_label=geo_label,
+                # Add strict 20-second timeout per adapter to avoid hanging the entire pipeline loop
+                events = await asyncio.wait_for(
+                    adapter.fetch_events(
+                        start_date=start_date,
+                        end_date=end_date,
+                        industry=industry,
+                        latitude=latitude,
+                        longitude=longitude,
+                        geo_label=geo_label,
+                    ),
+                    timeout=20.0
                 )
                 
                 # Classify unstructured events using the LLM with bounded concurrency
