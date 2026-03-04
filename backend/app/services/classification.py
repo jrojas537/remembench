@@ -59,6 +59,65 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
                 "summary": text[:200]
             }
 
+    async def classify_events_batch(self, events_texts: list[str], industry: str) -> list[dict]:
+        """
+        Passes a batch of raw texts to the LLM to extract meaning.
+        Returns a list of dicts conforming to the expected event schema.
+        """
+        if not events_texts:
+            return []
+
+        # Number each text so the LLM can align the output list properly
+        numbered_texts = [f"Item {i}:\n{text}" for i, text in enumerate(events_texts)]
+        payload = "\n\n---\n\n".join(numbered_texts)
+
+        system_prompt = f"""You are an expert data analyst for the '{industry}' industry.
+Analyze the following batch of event texts and extract key metrics for competitive intelligence.
+Respond ONLY with a valid JSON array containing EXACTLY {len(events_texts)} objects in the exact same order as the input items.
+The response must be completely unformatted (no markdown blocks like ```json).
+
+Each object in the array must match this schema:
+{{
+    "severity": float, // 0.0 to 1.0 (1.0 = extremely high impact on operations/sales)
+    "confidence": float, // 0.0 to 1.0 (How certain are you this event actually happened and is relevant)
+    "category": string, // e.g., "weather", "macro_economic", "competitor_action", "supply_chain", "holiday", "local_event"
+    "subcategory": string, // e.g., "bogo_promo", "network_outage", "winter_storm", "price_hike"
+    "summary": string, // A clear, 1-2 sentence description of the event
+    "details": {{
+        "competitor_name": string | null, // Name of the competitor if mentioned (e.g., "Verizon", "Dominos")
+        "promotion_details": string | null, // Specifics of a deal (e.g., "50% off", "iPhone 15 BOGO")
+        "detailed_impact": string, // Why this matters specifically for a business in this industry
+        "source_link": string | null // The original URL if clearly present in the text
+    }}
+}}
+"""
+
+        try:
+            response_text = await self.llm.complete(system=system_prompt, user=payload)
+            
+            # Use regex to robustly extract the JSON array amidst conversational hallucination
+            match = re.search(r'\[.*\]', response_text, re.DOTALL)
+            if not match:
+                raise ValueError("No JSON array found in LLM response")
+            
+            cleaned_text = match.group(0)
+            results = json.loads(cleaned_text)
+            
+            if not isinstance(results, list) or len(results) != len(events_texts):
+                 raise ValueError("LLM returned malformed list structure.")
+                 
+            return results
+            
+        except Exception as e:
+            logger.error("llm_batch_classification_failed", error=str(e), text_snippet=payload[:100])
+            # Return safe default fallbacks if LLM fails
+            return [{
+                "severity": 0.5,
+                "confidence": 0.5,
+                "category": "competitor_promo",
+                "summary": text[:200]
+            } for text in events_texts]
+
     async def generate_executive_briefing(self, events: list[dict], industry: str) -> str:
         """
         Reads a list of events and synthesizes a high-level strategic brief.
