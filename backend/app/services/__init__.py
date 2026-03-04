@@ -89,18 +89,17 @@ class IngestionService:
         # Run all adapters in parallel — they are independent HTTP calls
         async def _run_adapter(adapter: BaseAdapter) -> list[ImpactEventCreate]:
             try:
-                # Add strict 20-second timeout per adapter to avoid hanging the entire pipeline loop
-                events = await asyncio.wait_for(
-                    adapter.fetch_events(
+                # Give adapters plenty of time for AI parsing and rich external fetching
+                # especially for heavy WebSearch extraction
+                async with asyncio.timeout(60.0):
+                    events = await adapter.fetch_events(
                         start_date=start_date,
                         end_date=end_date,
                         industry=industry,
                         latitude=latitude,
                         longitude=longitude,
                         geo_label=geo_label,
-                    ),
-                    timeout=20.0
-                )
+                    )
                 
                 # Classify unstructured events using the LLM with bounded concurrency and batching
                 if getattr(adapter, 'requires_llm_classification', False):
@@ -280,7 +279,7 @@ class IngestionService:
                 )
             )
             result = await db.execute(stmt, values)
-            inserted_count += result.rowcount
+            inserted_count += len(values)
 
         await db.commit()
         return inserted_count
