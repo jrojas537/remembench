@@ -59,28 +59,39 @@ It ingests contextual data from multiple sources (weather APIs, news feeds, holi
                               └────────┘ └────────┘ └────────┘
 ```
 
-### Data Pipeline
+### Data Pipeline & LLM Processing
+
+The ingestion payload handles both structured APIs and chaotic unstructured data (like web scraped articles) using a highly optimized, cost-conscious pipeline:
 
 ```
+  [Structured]
   Open-Meteo ──┐
-  NOAA CDO  ───┤
-  GDELT     ───┼──▶ IngestionService ──▶ Dedup ──▶ PostgreSQL
-  RSS Feeds ───┤        │                              │
-  Holidays  ───┘    industry-aware              ImpactEvents table
-                    queries/classification
+  NOAA CDO  ───┼───────────▶ (Bypass LLM) ─────────┐
+  Holidays  ───┘                                   │
+                                                   ▼
+  [Unstructured]                              PostgreSQL
+  GDELT News ──┐                                   ▲
+  RSS Feeds ───┼──▶ Semantic ──▶ Batch LLM ────────┘
+  Tavily/Exa ──┘    Dedup        Processing
 ```
+
+**Optimization Layers:**
+1. **Tier 1 DB Pre-Flight:** Prevents the system from querying the LLM for articles that already exist in PostgreSQL.
+2. **Tier 2 Idempotent Route Caching:** Caches the full ingestion response in Redis (permanently for >14 day old requests, 4 hours for recent searches) bridging identical requests across different users without launching pipelines.
+3. **Tier 3 HTTP Caching:** Falls back to Redis JSON stores within individual adapters (like Tavily/Exa) to intercept repeated date radius bumps.
 
 ### Key Components
 
 | Component | Path | Purpose |
 |-----------|------|---------|
 | **Industry Registry** | `backend/app/industries.py` | Centralized config for all verticals |
-| **Adapters** | `backend/app/adapters/` | Source-specific data fetching |
-| **Ingestion Service** | `backend/app/services/` | Orchestration + dedup + batch upsert |
-| **Impact Events API** | `backend/app/routes/anomaly_events.py` | CRUD endpoints |
-| **YoY Comparison** | `backend/app/routes/yoy_comparison.py` | Cross-year analysis engine |
-| **Celery Tasks** | `backend/app/tasks.py` | Nightly, weekly, and backfill jobs |
-| **Dashboard** | `frontend/app/page.js` | Interactive industry-aware UI |
+| **Adapters** | `backend/app/adapters/` | Source-specific API fetching |
+| **Ingestion Service** | `backend/app/services/` | 3-Tier Cache orchestration + dedup + batch upsert |
+| **Classification** | `services/classification.py`| Anthropic AI clustering & executive briefings |
+| **Impact Events API** | `routes/anomaly_events.py` | CRUD endpoints |
+| **YoY Comparison** | `routes/yoy_comparison.py` | Cross-year analysis engine |
+| **Redis Cache** | `backend/app/cache.py` | Async global dependency pool |
+| **Dashboard** | `frontend/app/page.js` | Interactive industry UI + Client-Side Exports |
 
 ---
 
@@ -134,17 +145,19 @@ npm install && npm run dev
 |--------|----------|-------------|
 | `POST` | `/events/` | Create a new impact event |
 | `GET` | `/events/` | List events with filters |
-| `GET` | `/events/stats/summary` | Category statistics |
+| `GET` | `/events/stats/summary` | Category and AI grouping statistics |
 | `GET` | `/events/{event_id}` | Get single event by UUID |
+| `GET` | `/events/briefing` | Generate an AI Executive Briefing from current filters |
 
 **Query Parameters (GET /events/):**
 
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
 | `industry` | string | `wireless_retail` | Industry vertical key |
-| `category` | string | — | Filter by category |
+| `category` | string | — | Filter by semantic category (e.g. competitor_promo)|
 | `source` | string | — | Filter by data source |
 | `geo_label` | string | — | Filter by market (partial match) |
+| `confidence` | string | — | Filter by LLM Confidence (e.g. HIGH, MEDIUM) |
 | `limit` | int | 50 | Max results (1–500) |
 | `offset` | int | 0 | Pagination offset |
 
