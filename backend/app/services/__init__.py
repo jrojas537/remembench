@@ -86,8 +86,8 @@ class IngestionService:
         all_events: list[ImpactEventCreate] = []
         adapter_stats: dict[str, dict] = {}
 
-        # Run all adapters in parallel — they are independent HTTP calls
-        async def _run_adapter(adapter: BaseAdapter) -> list[ImpactEventCreate]:
+        # 1. Fetch Phase
+        async def _fetch_from_adapter(adapter: BaseAdapter) -> tuple[BaseAdapter, list[ImpactEventCreate]]:
             try:
                 # Give adapters plenty of time for AI parsing and rich external fetching
                 # especially for heavy WebSearch extraction
@@ -100,71 +100,11 @@ class IngestionService:
                         longitude=longitude,
                         geo_label=geo_label,
                     )
-                
-                # Classify unstructured events using the LLM with bounded concurrency and batching
-                if getattr(adapter, 'requires_llm_classification', False):
-                    # 1. Local Semantic Deduplication (Save tokens by avoiding identical syndicated news)
-                    unique_events = []
-                    seen_texts = []
-                    
-                    for ev in events:
-                        text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
-                        if not text_to_analyze:
-                            unique_events.append(ev)
-                            continue
-                            
-                        # Check similarity against already seen texts
-                        is_duplicate = False
-                        for seen in seen_texts:
-                            similarity = SequenceMatcher(None, text_to_analyze, seen).ratio()
-                            if similarity > 0.85:
-                                is_duplicate = True
-                                break
-                                
-                        if not is_duplicate:
-                            seen_texts.append(text_to_analyze)
-                            unique_events.append(ev)
-                            
-                    events = unique_events  # Discard the exact or near-exact semantic duplicates
-                    
-                    # 2. Batch Classification (Cut system prompt tax by 10x)
-                    batch_size = 10
-                    batches = [events[i:i + batch_size] for i in range(0, len(events), batch_size)]
-                    
-                    sem = asyncio.Semaphore(3) # Max 3 concurrent batched LLM calls (30 items total inflight)
-                    
-                    async def _process_batch(batch):
-                        async with sem:
-                            texts = [ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description for ev in batch]
-                            classifications = await self.classification_service.classify_events_batch(texts, industry)
-                            
-                            for i, ev in enumerate(batch):
-                                if i < len(classifications):
-                                    classification = classifications[i]
-                                    ev.severity = classification.get("severity", ev.severity)
-                                    ev.confidence = classification.get("confidence", ev.confidence)
-                                    ev.category = classification.get("category", ev.category)
-                                    ev.subcategory = classification.get("subcategory", ev.subcategory)
-                                    ev.title = classification.get("summary", ev.title)
-                                    
-                                    # Use detailed impact for description to provide more value, fallback to summary
-                                    details = classification.get("details", {})
-                                    detailed_impact = details.get("detailed_impact") if isinstance(details, dict) else None
-                                    ev.description = detailed_impact or classification.get("summary", ev.description)
-                                    
-                                    # Store rich details in the payload for the frontend modal
-                                    if "details" in classification:
-                                        if not ev.raw_payload:
-                                            ev.raw_payload = {}
-                                        ev.raw_payload["details"] = classification["details"]
-                    
-                    await asyncio.gather(*[_process_batch(b) for b in batches])
-
                 adapter_stats[adapter.name] = {
                     "fetched": len(events),
                     "status": "success",
                 }
-                return events
+                return adapter, events
             except Exception as exc:
                 logger.error(
                     "adapter_failed",
@@ -178,13 +118,99 @@ class IngestionService:
                     "status": "error",
                     "error": str(exc),
                 }
-                return []
+                return adapter, []
 
-        results = await asyncio.gather(
-            *[_run_adapter(a) for a in self.adapters]
+        fetch_results = await asyncio.gather(
+            *[_fetch_from_adapter(a) for a in self.adapters]
         )
-        for events in results:
-            all_events.extend(events)
+
+        # 2. Separation Phase
+        structured_events: list[ImpactEventCreate] = []
+        unstructured_events: list[ImpactEventCreate] = []
+
+        for adapter, events in fetch_results:
+            if getattr(adapter, 'requires_llm_classification', False):
+                unstructured_events.extend(events)
+            else:
+                structured_events.extend(events)
+
+        # 3. Global Semantic Deduplication (across all unstructured sources)
+        unique_unstructured = []
+        seen_texts = []
+        
+        for ev in unstructured_events:
+            text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
+            if not text_to_analyze:
+                unique_unstructured.append(ev)
+                continue
+                
+            # Check similarity against already seen texts (cross-adapter checks!)
+            is_duplicate = False
+            for seen in seen_texts:
+                similarity = SequenceMatcher(None, text_to_analyze, seen).ratio()
+                if similarity > 0.85:
+                    is_duplicate = True
+                    break
+                    
+            if not is_duplicate:
+                seen_texts.append(text_to_analyze)
+                unique_unstructured.append(ev)
+
+        # 4. Batch Classification on unique events (Cut system prompt tax by 10x)
+        batch_size = 10
+        batches = [unique_unstructured[i:i + batch_size] for i in range(0, len(unique_unstructured), batch_size)]
+        
+        sem = asyncio.Semaphore(3) # Max 3 concurrent batched LLM calls (30 items total inflight)
+        
+        async def _process_batch(batch):
+            async with sem:
+                texts = [ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description for ev in batch]
+                classifications = await self.classification_service.classify_events_batch(texts, industry)
+                
+                for i, ev in enumerate(batch):
+                    if i < len(classifications):
+                        classification = classifications[i]
+                        ev.severity = classification.get("severity", ev.severity)
+                        ev.confidence = classification.get("confidence", ev.confidence)
+                        ev.category = classification.get("category", ev.category)
+                        ev.subcategory = classification.get("subcategory", ev.subcategory)
+                        
+                        summary = classification.get("summary", ev.title)
+                        details = classification.get("details", {})
+                        
+                        # Explicitly elevate promotion details to the title to be highly visible
+                        if isinstance(details, dict):
+                            promo_details = details.get("promotion_details")
+                            competitor = details.get("competitor_name")
+                            
+                            prefix_parts = []
+                            if competitor and competitor.lower() not in summary.lower():
+                                prefix_parts.append(competitor)
+                            if promo_details:
+                                prefix_parts.append(promo_details)
+                                
+                            if prefix_parts:
+                                ev.title = f"{' - '.join(prefix_parts)} | {summary}"
+                            else:
+                                ev.title = summary
+                        else:
+                            ev.title = summary
+                        
+                        # Use detailed impact for description to provide more value, fallback to summary
+                        detailed_impact = details.get("detailed_impact") if isinstance(details, dict) else None
+                        ev.description = detailed_impact or summary
+                        
+                        # Store rich details in the payload for the frontend modal
+                        if "details" in classification:
+                            if not ev.raw_payload:
+                                ev.raw_payload = {}
+                            ev.raw_payload["details"] = classification["details"]
+        
+        if batches:
+            await asyncio.gather(*[_process_batch(b) for b in batches])
+
+        # 5. Combine and Persist
+        all_events = structured_events + unique_unstructured
 
         # Deduplicate by (source, source_id) before persistence
         deduped = self._deduplicate(all_events)
