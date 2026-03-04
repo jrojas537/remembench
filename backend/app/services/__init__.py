@@ -14,6 +14,7 @@ per batch of 100 rows.
 
 import asyncio
 from datetime import datetime
+from difflib import SequenceMatcher
 
 from geoalchemy2.functions import ST_MakePoint, ST_SetSRID
 from sqlalchemy import text
@@ -100,36 +101,64 @@ class IngestionService:
                     timeout=20.0
                 )
                 
-                # Classify unstructured events using the LLM with bounded concurrency
+                # Classify unstructured events using the LLM with bounded concurrency and batching
                 if getattr(adapter, 'requires_llm_classification', False):
-                    sem = asyncio.Semaphore(5)
+                    # 1. Local Semantic Deduplication (Save tokens by avoiding identical syndicated news)
+                    unique_events = []
+                    seen_texts = []
                     
-                    async def _classify(ev):
+                    for ev in events:
+                        text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
+                        if not text_to_analyze:
+                            unique_events.append(ev)
+                            continue
+                            
+                        # Check similarity against already seen texts
+                        is_duplicate = False
+                        for seen in seen_texts:
+                            similarity = SequenceMatcher(None, text_to_analyze, seen).ratio()
+                            if similarity > 0.85:
+                                is_duplicate = True
+                                break
+                                
+                        if not is_duplicate:
+                            seen_texts.append(text_to_analyze)
+                            unique_events.append(ev)
+                            
+                    events = unique_events  # Discard the exact or near-exact semantic duplicates
+                    
+                    # 2. Batch Classification (Cut system prompt tax by 10x)
+                    batch_size = 10
+                    batches = [events[i:i + batch_size] for i in range(0, len(events), batch_size)]
+                    
+                    sem = asyncio.Semaphore(3) # Max 3 concurrent batched LLM calls (30 items total inflight)
+                    
+                    async def _process_batch(batch):
                         async with sem:
-                            text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
-                            if text_to_analyze:
-                                classification = await self.classification_service.classify_event(
-                                    text=text_to_analyze, 
-                                    industry=industry
-                                )
-                                ev.severity = classification.get("severity", ev.severity)
-                                ev.confidence = classification.get("confidence", ev.confidence)
-                                ev.category = classification.get("category", ev.category)
-                                ev.subcategory = classification.get("subcategory", ev.subcategory)
-                                ev.title = classification.get("summary", ev.title)
-                                
-                                # Use detailed impact for description to provide more value, fallback to summary
-                                details = classification.get("details", {})
-                                detailed_impact = details.get("detailed_impact") if isinstance(details, dict) else None
-                                ev.description = detailed_impact or classification.get("summary", ev.description)
-                                
-                                # Store rich details in the payload for the frontend modal
-                                if "details" in classification:
-                                    if not ev.raw_payload:
-                                        ev.raw_payload = {}
-                                    ev.raw_payload["details"] = classification["details"]
+                            texts = [ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description for ev in batch]
+                            classifications = await self.classification_service.classify_events_batch(texts, industry)
+                            
+                            for i, ev in enumerate(batch):
+                                if i < len(classifications):
+                                    classification = classifications[i]
+                                    ev.severity = classification.get("severity", ev.severity)
+                                    ev.confidence = classification.get("confidence", ev.confidence)
+                                    ev.category = classification.get("category", ev.category)
+                                    ev.subcategory = classification.get("subcategory", ev.subcategory)
+                                    ev.title = classification.get("summary", ev.title)
+                                    
+                                    # Use detailed impact for description to provide more value, fallback to summary
+                                    details = classification.get("details", {})
+                                    detailed_impact = details.get("detailed_impact") if isinstance(details, dict) else None
+                                    ev.description = detailed_impact or classification.get("summary", ev.description)
+                                    
+                                    # Store rich details in the payload for the frontend modal
+                                    if "details" in classification:
+                                        if not ev.raw_payload:
+                                            ev.raw_payload = {}
+                                        ev.raw_payload["details"] = classification["details"]
                     
-                    await asyncio.gather(*[_classify(ev) for ev in events])
+                    await asyncio.gather(*[_process_batch(b) for b in batches])
 
                 adapter_stats[adapter.name] = {
                     "fetched": len(events),
