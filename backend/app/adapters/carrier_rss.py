@@ -118,7 +118,7 @@ class IndustryRssAdapter(BaseAdapter):
         geo_label: str | None,
         industry: str,
     ) -> list[ImpactEventCreate]:
-        """Parse a single RSS feed and extract relevant entries."""
+        """Parse a single RSS feed and extract relevant entries safely."""
         events: list[ImpactEventCreate] = []
 
         try:
@@ -132,7 +132,16 @@ class IndustryRssAdapter(BaseAdapter):
             )
             return []
 
-        feed = feedparser.parse(raw_content)
+        # Attempt to parse the feed, capturing malformed XML breaks
+        try:
+            feed = feedparser.parse(raw_content)
+        except Exception as e:
+            self.logger.error("rss_parse_error", source=source_key, error=str(e))
+            return []
+            
+        if not hasattr(feed, "entries") or not isinstance(feed.entries, list):
+            self.logger.warning("rss_invalid_entries", source=source_key)
+            return []
 
         for entry in feed.entries:
             # Parse publication date
@@ -140,39 +149,48 @@ class IndustryRssAdapter(BaseAdapter):
             if pub_date is None:
                 continue
 
-            # Filter to date range
+            # Strict bounds checking
             if pub_date < start_date or pub_date > end_date:
                 continue
 
-            title = entry.get("title", "")
-            summary = entry.get("summary", entry.get("description", ""))
-            link = entry.get("link", "")
+            # Safely coerce Feedparser types into explicit strings
+            title: str = str(entry.get("title", ""))
+            summary: str = str(entry.get("summary", entry.get("description", "")))
+            link: str = str(entry.get("link", ""))
 
-            # Classify based on industry
+            if not title:
+                continue  # Impossible to rank without a title
+
+            # Classify based on industry definitions
             category, subcategory = self._classify_entry(title, summary, industry)
             if category is None:
-                continue  # Skip irrelevant entries
+                continue  # Skip irrelevant entries based on the _classify_entry filters
 
             severity = self._estimate_severity(title, summary, industry, source_key)
 
-            events.append(ImpactEventCreate(
-                source="rss",
-                source_id=f"rss-{source_key}-{link[:200]}",
-                category=category,
-                subcategory=subcategory,
-                title=f"[{source_key.upper()}] {title[:450]}",
-                description=summary[:1000] if summary else None,
-                severity=severity,
-                confidence=0.85,  # Published news sources = high confidence
-                start_date=pub_date,
-                geo_label=geo_label or "National",
-                industry=industry,
-                raw_payload={
-                    "source_key": source_key,
-                    "link": link,
-                    "feed_label": feed_label,
-                },
-            ))
+            try:
+                events.append(ImpactEventCreate(
+                    source="rss",
+                    source_id=f"rss-{source_key}-{link[:200]}",
+                    category=category,
+                    subcategory=subcategory,
+                    title=f"[{source_key.upper()}] {title[:450]}",
+                    description=summary[:1000] if summary else None,
+                    severity=severity,
+                    confidence=0.85,  # Published news sources = high confidence correlation
+                    start_date=pub_date,
+                    end_date=pub_date, # Explicitly matching start_date for single-day granularity
+                    geo_label=geo_label or "National",
+                    industry=industry,
+                    raw_payload={
+                        "source_key": source_key,
+                        "link": link,
+                        "feed_label": feed_label,
+                    },
+                ))
+            except Exception as schema_err:
+                self.logger.warning("rss_schema_build_failed", title=title, err=str(schema_err))
+                continue
 
         return events
 

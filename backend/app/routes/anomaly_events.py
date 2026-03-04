@@ -29,18 +29,24 @@ logger = get_logger("routes.events")
 router = APIRouter()
 
 
-@router.post("/", response_model=ImpactEventResponse, status_code=201,
-             dependencies=[Depends(require_api_key)])
+@router.post(
+    "/",
+    response_model=ImpactEventResponse,
+    status_code=201,
+    summary="Create Impact Event",
+    response_description="The newly created Impact Event record.",
+    dependencies=[Depends(require_api_key)],
+)
 async def create_event(
     event: ImpactEventCreate,
     db: AsyncSession = Depends(get_db),
 ) -> ImpactEvent:
     """
-    Create a new impact event.
+    Create a new structured impact event representing a business disruption factor.
 
-    Typically called by adapters during ingestion, not by end users.
-    If latitude/longitude are provided, a PostGIS point is created
-    for spatial queries.
+    This endpoint is designed for internal adapter consumption. If explicit spatial
+    coordinates (`latitude`, `longitude`) are passed, the backend automatically 
+    synthesizes a generic PostGIS point geometry for advanced proximity calculations.
     """
     db_event = ImpactEvent(
         source=event.source,
@@ -59,7 +65,7 @@ async def create_event(
         raw_payload=event.raw_payload,
     )
 
-    # Set PostGIS POINT geometry if coordinates are provided
+    # Convert native lat/long to PostGIS spatial tracking point
     if event.latitude is not None and event.longitude is not None:
         db_event.geography = ST_SetSRID(
             ST_MakePoint(event.longitude, event.latitude), 4326
@@ -79,25 +85,31 @@ async def create_event(
     return db_event
 
 
-@router.get("/", response_model=list[ImpactEventResponse])
+@router.get(
+    "/",
+    response_model=list[ImpactEventResponse],
+    summary="List Impact Events",
+    response_description="A list of historical impact events filtered by parameters.",
+)
 async def list_events(
-    category: str | None = Query(None, description="Filter by impact category"),
-    source: str | None = Query(None, description="Filter by data source"),
-    geo_label: str | None = Query(None, description="Filter by market name (partial match)"),
-    industry: str = Query("wireless_retail", description="Industry vertical"),
-    start_date: datetime | None = Query(None, description="Filter events on or after this date"),
-    end_date: datetime | None = Query(None, description="Filter events on or before this date"),
-    limit: int = Query(50, ge=1, le=500, description="Max results to return"),
-    offset: int = Query(0, ge=0, description="Pagination offset"),
+    category: str | None = Query(None, description="Filter by event taxonomy category"),
+    source: str | None = Query(None, description="Filter by ingest source (e.g. gdelt, noaa-cdo)"),
+    geo_label: str | None = Query(None, description="Search by approximate tracking market name"),
+    industry: str = Query("wireless_retail", description="Explicit industry vertical scope"),
+    start_date: datetime | None = Query(None, description="Only fetch events occurring after this timestamp"),
+    end_date: datetime | None = Query(None, description="Only fetch events occurring before this timestamp"),
+    limit: int = Query(50, ge=1, le=500, description="Clamp the max page results between 1 and 500"),
+    offset: int = Query(0, ge=0, description="Standard offset pagination"),
     db: AsyncSession = Depends(get_db),
 ) -> list[ImpactEvent]:
     """
-    List impact events with optional filters.
+    Query the Impact Event database using a robust filter set.
 
-    Returns events sorted by date (newest first) for the specified
-    industry. Supports filtering by category, source, market, and date range.
+    Ordered sequentially latest to oldest. Automatically cascades down to fetch all
+    child verticals related to the primary query `industry`.
     """
     from app.industries import get_related_industry_keys
+    
     related_keys = get_related_industry_keys(industry)
     query = select(ImpactEvent).where(ImpactEvent.industry.in_(related_keys))
 
@@ -106,7 +118,7 @@ async def list_events(
     if source:
         query = query.where(ImpactEvent.source == source)
     if geo_label:
-        # Safe from SQL injection — icontains uses parameterized queries
+        # Prevent SQL injection natively through SQLAlchemy parameterized `icontains`
         query = query.where(ImpactEvent.geo_label.icontains(geo_label))
     if start_date:
         query = query.where(ImpactEvent.start_date >= start_date)
@@ -115,23 +127,27 @@ async def list_events(
 
     query = query.order_by(ImpactEvent.start_date.desc()).limit(limit).offset(offset)
     result = await db.execute(query)
+    
     return list(result.scalars().all())
 
 
-# NOTE: /stats/summary must come BEFORE /{event_id} — see module docstring.
-@router.get("/stats/summary")
+@router.get(
+    "/stats/summary",
+    summary="Get Anomaly Summary Statistics",
+    response_description="A structured taxonomy breakdown detailing aggregate frequency and combined severity trends.",
+)
 async def anomaly_stats(
-    industry: str = Query("wireless_retail", description="Industry vertical"),
-    start_date: datetime | None = Query(None, description="Filter events on or after this date"),
-    end_date: datetime | None = Query(None, description="Filter events on or before this date"),
-    geo_label: str | None = Query(None, description="Filter by market name (includes National)"),
+    industry: str = Query("wireless_retail", description="The target industry vertical"),
+    start_date: datetime | None = Query(None, description="Bounding time-series filter"),
+    end_date: datetime | None = Query(None, description="Bounding time-series filter"),
+    geo_label: str | None = Query(None, description="Optional bounding filter for physical market coordinates"),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
-    Get summary statistics of anomaly events by subcategory to show which specific 
-    causes are driving unusual friction.
+    Aggregates database totals rapidly for top-line visual macro-trends.
     """
     from app.industries import get_related_industry_keys
+    
     related_keys = get_related_industry_keys(industry)
     
     stmt = (
@@ -142,14 +158,17 @@ async def anomaly_stats(
         )
         .where(ImpactEvent.industry.in_(related_keys))
     )
+    
     if start_date:
         stmt = stmt.where(ImpactEvent.start_date >= start_date)
     if end_date:
         stmt = stmt.where(ImpactEvent.start_date <= end_date)
+        
     stmt = stmt.group_by(ImpactEvent.category)
 
     result = await db.execute(stmt)
     rows = result.all()
+    
     return {
         "industry": industry,
         "categories": {
@@ -162,16 +181,23 @@ async def anomaly_stats(
     }
 
 
-@router.get("/{event_id}", response_model=ImpactEventResponse)
+@router.get(
+    "/{event_id}",
+    response_model=ImpactEventResponse,
+    summary="Get Specific Event",
+    response_description="Returns absolute properties for the targeted Database record.",
+)
 async def get_event(
     event_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
 ) -> ImpactEvent:
-    """Retrieve a single impact event by its UUID."""
+    """Retrieve singular event properties safely mapping up to an exact `uuid.UUID` endpoint."""
     result = await db.execute(
         select(ImpactEvent).where(ImpactEvent.id == event_id)
     )
+    
     event = result.scalar_one_or_none()
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=404, detail="Requested Impact Event UUID could not be located")
+        
     return event
