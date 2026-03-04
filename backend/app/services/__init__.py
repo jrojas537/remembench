@@ -135,13 +135,13 @@ class IngestionService:
                 structured_events.extend(events)
 
         # 3. Global Semantic Deduplication (across all unstructured sources)
-        unique_unstructured = []
+        pending_unstructured = []
         seen_texts = []
         
         for ev in unstructured_events:
             text_to_analyze = ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description
             if not text_to_analyze:
-                unique_unstructured.append(ev)
+                pending_unstructured.append(ev)
                 continue
                 
             # Check similarity against already seen texts (cross-adapter checks!)
@@ -154,7 +154,22 @@ class IngestionService:
                     
             if not is_duplicate:
                 seen_texts.append(text_to_analyze)
-                unique_unstructured.append(ev)
+                pending_unstructured.append(ev)
+                
+        # 3.5 Database Pre-flight DB Deduplication (Zero-Token Logic)
+        # Check PostgreSQL: do we already hold these source_ids?
+        from sqlalchemy import select
+
+        source_ids = [ev.source_id for ev in pending_unstructured if ev.source_id]
+        existing_ids = set()
+        
+        if source_ids:
+            # PostgreSQL can handle thousands of IN items easily
+            stmt = select(ImpactEvent.source_id).where(ImpactEvent.source_id.in_(source_ids))
+            result = await db.execute(stmt)
+            existing_ids = set(result.scalars().all())
+            
+        unique_unstructured = [ev for ev in pending_unstructured if ev.source_id not in existing_ids]
 
         # 4. Batch Classification on unique events (Cut system prompt tax by 10x)
         batch_size = 10
