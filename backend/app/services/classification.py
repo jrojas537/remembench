@@ -26,7 +26,7 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
 {{
     "severity": float, // 0.0 to 1.0 (1.0 = extremely high impact on operations/sales)
     "confidence": float, // 0.0 to 1.0 (How certain are you this event actually happened and is relevant)
-    "category": string, // e.g., "weather", "macro_economic", "competitor_action", "supply_chain", "holiday", "local_event"
+    "category": string, // e.g., "weather", "macro_economic", "competitor_action", "supply_chain", "holiday", "local_event", "sports"
     "subcategory": string, // e.g., "bogo_promo", "network_outage", "winter_storm", "price_hike"
     "summary": string, // A clear, 1-2 sentence description of the event
     "details": {{
@@ -80,7 +80,7 @@ Each object in the array must match this schema:
 {{
     "severity": float, // 0.0 to 1.0 (1.0 = extremely high impact on operations/sales)
     "confidence": float, // 0.0 to 1.0 (How certain are you this event actually happened and is relevant)
-    "category": string, // e.g., "weather", "macro_economic", "competitor_action", "supply_chain", "holiday", "local_event"
+    "category": string, // e.g., "weather", "macro_economic", "competitor_action", "supply_chain", "holiday", "local_event", "sports"
     "subcategory": string, // e.g., "bogo_promo", "network_outage", "winter_storm", "price_hike"
     "summary": string, // A clear, 1-2 sentence description of the event
     "details": {{

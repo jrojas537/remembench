@@ -82,7 +82,8 @@ PIZZA_GDELT_QUERIES = [
     '"food delivery" OR "DoorDash" OR "Uber Eats" OR "Grubhub" (fees OR disruption OR strike)',
     '"food safety" OR "health inspection" OR "food recall" OR "restaurant inspection"',
     '"restaurant closure" OR "dining shutdown" OR "restaurant shutdown"',
-    "protest OR demonstration OR road closure OR parade",
+    "protest OR demonstration OR road closure OR parade OR concert OR festival",
+    "sports OR game OR tournament OR marathon OR stadium",
     '"minimum wage" OR "labor shortage" OR "restaurant workers"',
     '"cheese prices" OR "flour prices" OR "food costs" OR "ingredient prices"',
     '("Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Dominos" OR "Buddy\'s") (promotion OR discount OR launch)',
@@ -136,12 +137,12 @@ PIZZA_RSS_FEEDS = [
 
 # Categories shared across all industries
 UNIVERSAL_CATEGORIES = [
-    "weather", "holiday", "news",
+    "weather", "holiday", "news", "sports", "local_event",
 ]
 
 PIZZA_CATEGORIES = UNIVERSAL_CATEGORIES + [
     "competitor_promo", "delivery_disruption", "food_safety",
-    "supply_chain", "labor", "local_event",
+    "supply_chain", "labor",
 ]
 
 
@@ -171,6 +172,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "supply_chain": "Supply Chain / Costs",
             "labor": "Labor / Staffing",
             "local_event": "Local Event / Festival",
+            "sports": "Sports / Game",
         },
     ),
 
@@ -195,6 +197,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "supply_chain": "Supply Chain / Costs",
             "labor": "Labor / Staffing",
             "local_event": "Local Event / Festival",
+            "sports": "Sports / Game",
         },
     ),
 
@@ -219,6 +222,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "supply_chain": "Supply Chain / Costs",
             "labor": "Driver / Labor Shortage",
             "local_event": "Local Event / Festival",
+            "sports": "Sports / Game",
         },
     ),
 }
