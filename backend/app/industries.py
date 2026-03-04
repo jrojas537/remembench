@@ -243,6 +243,18 @@ def get_industry(key: str) -> IndustryConfig:
         ) from None
 
 
+def get_related_industry_keys(industry_key: str) -> list[str]:
+    """Return a list of industry keys for the given industry.
+    If it's an '_all' key, return all keys in its group."""
+    try:
+        config = get_industry(industry_key)
+        if industry_key.endswith("_all"):
+            return [k for k, v in INDUSTRIES.items() if v.group == config.group]
+        return [industry_key]
+    except KeyError:
+        return [industry_key]
+
+
 def get_industry_groups() -> dict[str, list[IndustryConfig]]:
     """Group industries by their group key for UI display."""
     groups: dict[str, list[IndustryConfig]] = {}

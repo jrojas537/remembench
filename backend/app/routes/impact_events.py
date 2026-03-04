@@ -97,7 +97,9 @@ async def list_events(
     Returns events sorted by date (newest first) for the specified
     industry. Supports filtering by category, source, market, and date range.
     """
-    query = select(ImpactEvent).where(ImpactEvent.industry == industry)
+    from app.industries import get_related_industry_keys
+    related_keys = get_related_industry_keys(industry)
+    query = select(ImpactEvent).where(ImpactEvent.industry.in_(related_keys))
 
     if category:
         query = query.where(ImpactEvent.category == category)
@@ -131,13 +133,16 @@ async def event_stats(
     """
     Get summary statistics of impact events per category.
     """
+    from app.industries import get_related_industry_keys
+    related_keys = get_related_industry_keys(industry)
+    
     stmt = (
         select(
             ImpactEvent.category,
             func.count(ImpactEvent.id).label("count"),
             func.avg(ImpactEvent.severity).label("avg_severity"),
         )
-        .where(ImpactEvent.industry == industry)
+        .where(ImpactEvent.industry.in_(related_keys))
     )
     if start_date:
         stmt = stmt.where(ImpactEvent.end_date >= start_date)
