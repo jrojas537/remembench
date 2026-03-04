@@ -53,7 +53,7 @@ class ImpactEventBase(BaseModel):
 
     # --- Content ---
     title: str = Field(
-        ..., min_length=1, max_length=512,
+        ..., min_length=1, max_length=2048,
         description="Short human-readable summary",
     )
     description: str | None = Field(
