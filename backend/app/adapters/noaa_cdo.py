@@ -78,86 +78,110 @@ class NoaaCdoAdapter(BaseAdapter):
 
     def _normalize(
         self,
-        records: list[dict],
+        records: list[dict[str, Any]],
         latitude: float,
         longitude: float,
         geo_label: str | None,
         industry: str,
     ) -> list[ImpactEventCreate]:
-        """Convert NOAA daily summary records into ImpactEvents."""
+        """
+        Convert raw NOAA structured JSON summary records into formatted ImpactEvents.
+        
+        Args:
+            records: Raw JSON records from NOAA API.
+            latitude: Target latitude coordinate.
+            longitude: Target longitude coordinate.
+            geo_label: Human readable label.
+            industry: The designated industry context.
+            
+        Returns:
+            list[ImpactEventCreate]: Safely typed events formatted for Database upsertion.
+        """
         events: list[ImpactEventCreate] = []
 
         # Group records by date (NOAA returns one record per datatype per station)
-        daily_data: dict[str, dict] = {}
+        daily_data: dict[str, dict[str, Any]] = {}
         for record in records:
-            date_key = record.get("DATE", "")[:10]
+            date_key: str = str(record.get("DATE", ""))[:10]
+            if not date_key:
+                continue
+                
             if date_key not in daily_data:
                 daily_data[date_key] = {}
-            datatype = record.get("datatype", "")
-            daily_data[date_key][datatype] = record.get("value")
+                
+            datatype: str = str(record.get("datatype", ""))
+            raw_val = record.get("value")
+            
+            # Strict safety bounds on typing incoming arbitrary float/int representations
+            if isinstance(raw_val, (int, float)):
+                daily_data[date_key][datatype] = float(raw_val)
 
         for date_str, values in daily_data.items():
-            tmax = values.get("TMAX")
-            tmin = values.get("TMIN")
-            prcp = values.get("PRCP")  # mm
-            snow = values.get("SNOW")  # mm
-            awnd = values.get("AWND")  # m/s
+            tmax: float | None = values.get("TMAX")
+            tmin: float | None = values.get("TMIN")
+            prcp: float | None = values.get("PRCP")  # mm
+            snow: float | None = values.get("SNOW")  # mm
+            awnd: float | None = values.get("AWND")  # m/s
 
-            significant = []
+            significant: list[dict[str, Any]] = []
 
             # Extreme cold
-            if tmin is not None and tmin <= -10:
+            if tmin is not None and tmin <= -10.0:
                 significant.append({
                     "type": "extreme_cold",
                     "title": f"[NOAA] Extreme Cold: {tmin:.0f}°C low",
-                    "severity": self._clamp_severity(0.5 + abs(tmin) / 40),
+                    "severity": self._clamp_severity(0.5 + abs(tmin) / 40.0),
                 })
 
             # Extreme heat
-            if tmax is not None and tmax >= 38:
+            if tmax is not None and tmax >= 38.0:
                 significant.append({
                     "type": "extreme_heat",
                     "title": f"[NOAA] Extreme Heat: {tmax:.0f}°C high",
-                    "severity": self._clamp_severity(0.4 + (tmax - 35) / 15),
+                    "severity": self._clamp_severity(0.4 + (tmax - 35.0) / 15.0),
                 })
 
             # Heavy snow (100mm = 10cm)
-            if snow is not None and snow >= 100:
-                snow_cm = snow / 10
+            if snow is not None and snow >= 100.0:
+                snow_cm = snow / 10.0
                 significant.append({
-                    "type": "heavy_snow" if snow_cm < 30 else "blizzard",
-                    "title": f"[NOAA] {'Blizzard' if snow_cm >= 30 else 'Heavy Snow'}: {snow_cm:.0f}cm",
-                    "severity": self._clamp_severity(0.55 + snow_cm / 60),
+                    "type": "heavy_snow" if snow_cm < 30.0 else "blizzard",
+                    "title": f"[NOAA] {'Blizzard' if snow_cm >= 30.0 else 'Heavy Snow'}: {snow_cm:.0f}cm",
+                    "severity": self._clamp_severity(0.55 + snow_cm / 60.0),
                 })
 
             # Heavy rain
-            if prcp is not None and prcp >= 40:
+            if prcp is not None and prcp >= 40.0:
                 significant.append({
                     "type": "heavy_rain",
                     "title": f"[NOAA] Heavy Rain: {prcp:.0f}mm",
-                    "severity": self._clamp_severity(0.4 + prcp / 200),
+                    "severity": self._clamp_severity(0.4 + prcp / 200.0),
                 })
 
             # High wind (m/s → km/h)
             if awnd is not None:
                 wind_kmh = awnd * 3.6
-                if wind_kmh >= 70:
+                if wind_kmh >= 70.0:
                     significant.append({
                         "type": "high_wind",
                         "title": f"[NOAA] High Wind: {wind_kmh:.0f} km/h",
-                        "severity": self._clamp_severity(0.4 + wind_kmh / 200),
+                        "severity": self._clamp_severity(0.4 + wind_kmh / 200.0),
                     })
 
             for item in significant:
-                event_date = datetime.fromisoformat(date_str)
+                try:
+                    event_date = datetime.fromisoformat(date_str)
+                except ValueError:
+                    continue  # Protect against malformed ISO string drops
+                    
                 events.append(ImpactEventCreate(
                     source="noaa-cdo",
-                    source_id=f"noaa-{date_str}-{latitude}-{longitude}-{item['type']}",
+                    source_id=f"noaa-{date_str}-{latitude}-{longitude}-{item.get('type')}",
                     category="weather",
-                    subcategory=item["type"],
-                    title=item["title"],
+                    subcategory=item.get("type", "generic"),
+                    title=item.get("title", "Weather Alert"),
                     description="NOAA station-level ground truth observation.",
-                    severity=item["severity"],
+                    severity=float(item.get("severity", 0.5)),
                     confidence=0.95,  # Station-level = highest confidence
                     start_date=event_date,
                     end_date=event_date,

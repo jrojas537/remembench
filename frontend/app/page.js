@@ -204,7 +204,14 @@ const PIZZA_DEMO_EVENTS = [
     },
 ];
 
-function generateDemoData(industry) {
+/**
+ * Generates an array of synthetic event documents mapping directly 
+ * to the `ImpactEventResponse` schema for local demo purposes.
+ * 
+ * @param {string} industry - The target industry group key (e.g. "pizza_all").
+ * @returns {Array<Object>} Synthetic array of complete event objects.
+ */
+function generateDemoData(industry = "wireless_retail") {
     const isPizza = industry.startsWith("pizza");
     const entries = isPizza ? PIZZA_DEMO_EVENTS : WIRELESS_DEMO_EVENTS;
     const now = new Date();
@@ -225,8 +232,16 @@ function generateDemoData(industry) {
     });
 }
 
-function generateDemoStats(industry) {
+/**
+ * Mocks the `anomaly_stats` aggregate route endpoint providing dynamic 
+ * categories explicitly tied to the current industry configuration.
+ *
+ * @param {string} industry - The target dashboard industry string.
+ * @returns {Object} JSON mapping reflecting the standard `/api/v1/events/stats/summary` schema.
+ */
+function generateDemoStats(industry = "wireless_retail") {
     const isPizza = industry.startsWith("pizza");
+
     if (isPizza) {
         return {
             industry,
@@ -242,6 +257,7 @@ function generateDemoStats(industry) {
             },
         };
     }
+
     return {
         industry,
         categories: {

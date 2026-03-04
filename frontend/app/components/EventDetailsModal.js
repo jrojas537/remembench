@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from "react";
 
+/**
+ * Renders an expansive popup modal detailing specific insights about a fetched intelligence event.
+ *
+ * @param {Object} props - Standard React Component Properties
+ * @param {string|null} props.eventId - Bound ID mapped directly to the local Postgres database tracking UUID.
+ * @param {Function} props.onClose - Callback function triggered upon closing the modal framework.
+ * @param {string|null} props.token - Active JWT Bearer Authorization payload.
+ * @param {string} props.API_BASE - Absolute targeted URL resolving to the backend server.
+ * @returns {JSX.Element|null} The resolved Modal node or null if not activated by `eventId`.
+ */
 export default function EventDetailsModal({ eventId, onClose, token, API_BASE }) {
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);

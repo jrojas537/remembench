@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
+/**
+ * Renders user preference slide-out panel allowing modification 
+ * of standard dashboard scope fields like tracking market and active industry.
+ *
+ * @param {Object} props - Standard React Node Property mapping
+ * @param {Function} props.onClose - Action mapping to collapse the lateral slider node.
+ * @param {Object} props.activeIndustries - Dynamic mapping object referencing all allowed vertical datasets.
+ * @returns {JSX.Element|null} Lateral Settings Node if Auth Context maps to an active user.
+ */
 export default function ProfileSettings({ onClose, activeIndustries }) {
     const { user, updatePreferences, logout } = useAuth();
     const router = useRouter();

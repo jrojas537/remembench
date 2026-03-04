@@ -175,21 +175,29 @@ class GdeltAdapter(BaseAdapter):
 
     def _classify_article(self, title: str, industry: str) -> tuple[str, str | None]:
         """
-        Classify a GDELT article into our category taxonomy.
+        Classify a GDELT article into our defined structured taxonomy.
 
-        Classification is industry-aware: pizza-related keywords map to
-        food-specific categories, while wireless keywords map to
-        telecom-specific categories.
+        Determines the primary and secondary thematic buckets by inspecting title keywords.
+        Classification is heavily industry-aware:
+        - Pizza-related keywords trace to food-safety, staffing, or ingredient impacts.
+        - Wireless-related keywords map to telecom outages or device releases.
+
+        Args:
+            title (str): The raw title of the news article.
+            industry (str): The vertical target (e.g. 'wireless_retail', 'pizza_all').
+
+        Returns:
+            tuple[str, str | None]: A core category and an optional granular subcategory.
         """
         title_lower = title.lower()
 
-        # Universal categories (apply to all industries)
+        # Phase 1: Universal categories (cross-industry threats)
         if any(kw in title_lower for kw in ["storm", "hurricane", "tornado", "flood", "blizzard", "wildfire"]):
             return "weather", "severe_weather_news"
         if any(kw in title_lower for kw in ["protest", "demonstration", "parade", "road closure"]):
             return "news", "local_disruption"
 
-        # Pizza-specific categories
+        # Phase 2: Pizza / Food Service constraints
         if industry.startswith("pizza"):
             if any(kw in title_lower for kw in ["food safety", "health inspection", "food recall", "contamination"]):
                 return "food_safety", "inspection_or_recall"
@@ -202,14 +210,14 @@ class GdeltAdapter(BaseAdapter):
             if any(kw in title_lower for kw in ["promotion", "deal", "offer", "discount", "special"]):
                 return "competitor_promo", "restaurant_promotion"
 
-        # Wireless-specific categories
+        # Phase 3: Hardware / Wireless Retail constraints
         if industry == "wireless_retail":
             if any(kw in title_lower for kw in ["promotion", "deal", "offer", "discount", "bogo", "trade-in"]):
                 return "competitor_promo", "carrier_promotion"
             if any(kw in title_lower for kw in ["outage", "disruption", "down", "failure"]):
                 return "outage", "network_outage"
 
-        # General fallback
+        # Phase 4: General business fallbacks
         if any(kw in title_lower for kw in ["closure", "shut down", "closed"]):
             return "news", "business_closure"
 
@@ -217,16 +225,24 @@ class GdeltAdapter(BaseAdapter):
 
     def _estimate_severity(self, tone: float, title: str) -> float:
         """
-        Estimate impact severity from GDELT tone score and keywords.
+        Estimate the quantitative impact severity (0.0 to 1.0) based on GDELT semantics.
 
-        Tone ranges from -100 to +100. Strong negative tone usually
-        correlates with events that disrupt normal operations.
+        Args:
+            tone (float): GDELT's calculated grammatical tone score (-100 to +100).
+            title (str): The raw article title extracted from the feed.
+
+        Returns:
+            float: A clamped severity rating bounded firmly between 0.0 and 1.0.
         """
         base_severity = 0.3
+        
+        # Penalize severely negative tones (high impact likelihood)
         if tone < _NEGATIVE_TONE_THRESHOLD:
-            base_severity += abs(tone) / 50
+            base_severity += abs(tone) / 50.0
 
         title_lower = title.lower()
+        
+        # Boost severity dynamically if catastrophic semantics match
         if any(kw in title_lower for kw in ["major", "massive", "unprecedented", "emergency"]):
             base_severity += 0.2
         if any(kw in title_lower for kw in ["nationwide", "widespread", "citywide"]):

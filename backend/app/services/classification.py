@@ -95,44 +95,54 @@ Each object in the array must match this schema:
         try:
             response_text = await self.llm.complete(system=system_prompt, user=payload)
             
-            # Use regex to robustly extract the JSON array amidst conversational hallucination
+            # We strictly extract JSON arrays handling LLM markdown variations
             match = re.search(r'\[.*\]', response_text, re.DOTALL)
             if not match:
-                raise ValueError("No JSON array found in LLM response")
+                raise ValueError("No JSON array bounds found in LLM response wrapper")
             
             cleaned_text = match.group(0)
             results = json.loads(cleaned_text)
             
             if not isinstance(results, list) or len(results) != len(events_texts):
-                 raise ValueError("LLM returned malformed list structure.")
+                 raise ValueError("LLM returned malformed list structure length mismatch.")
                  
-            return results
+            # Ensure standard type coercion for all inner dict values
+            return [{
+                "severity": float(res.get("severity", 0.5)),
+                "confidence": float(res.get("confidence", 0.5)),
+                "category": str(res.get("category", "news")),
+                "summary": str(res.get("summary", "No summary provided by LLM."))
+            } for res in results]
             
         except Exception as e:
             logger.error("llm_batch_classification_failed", error=str(e), text_snippet=payload[:100])
-            # Return safe default fallbacks if LLM fails
+            # Return safe default fallbacks bound strictly to schema expectations if the LLM fails
             return [{
                 "severity": 0.5,
-                "confidence": 0.5,
-                "category": "competitor_promo",
-                "summary": text[:200]
+                "confidence": 0.3,
+                "category": "news",
+                "summary": "LLM classification bypassed due to upstream generation error: " + text[:150]
             } for text in events_texts]
 
     async def generate_executive_briefing(self, events: list[dict], industry: str) -> str:
         """
-        Reads a list of events and synthesizes a high-level strategic brief.
+        Reads an array of event dictionaries and synthesizes a high-level strategic brief.
+        Truncates list size to avoid context-window overflows on heavy historical queries.
         """
         if not events:
             return "No events found in the current timeframe to analyze."
 
         # Truncate to reasonable limits to avoid token overflow
-        event_texts = []
+        event_texts: list[str] = []
         for e in events[:50]:
             title = e.get('title', 'Unknown')
             cat = e.get('category', 'Unknown')
             sev = e.get('severity', 0)
-            desc = e.get('description', '')[:200]
-            event_texts.append(f"[{cat} - Severity: {sev}] {title}: {desc}")
+            desc = e.get('description', '')
+            if desc is None:
+                desc = ""
+                
+            event_texts.append(f"[{cat} - Severity: {sev}] {title}: {desc[:200]}")
 
         payload = "\n".join(event_texts)
 
