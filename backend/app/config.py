@@ -1,19 +1,21 @@
 """
 Remembench — Application Configuration
 
-Centralized settings using pydantic-settings. All values can be
-overridden via environment variables or a .env file.
-
-CORS_ORIGINS accepts a comma-separated string for easy Docker deployment:
-    CORS_ORIGINS=https://my-domain.com,http://localhost:3000
+Centralized definition of environment variables utilizing `pydantic-settings`. 
+Enforces rigorous validation on startup, preventing the app from launching if 
+critical strings (like the Database URL) are missing or misconfigured.
 """
 
-from pydantic import field_validator
+from typing import Union, List
+from pydantic import field_validator, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Central configuration for the Remembench platform."""
+    """
+    Central configuration singleton for the Remembench platform.
+    Variables mapped directly to the root `.env` or system environment.
+    """
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -21,42 +23,51 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    # --- Application ---
-    app_name: str = "Remembench"
-    debug: bool = False
-    api_prefix: str = "/api/v1"
+    # --- Application Identity ---
+    app_name: str = Field("Remembench", description="Global application display name")
+    debug: bool = Field(False, description="Enable local Uvicorn reload and verbose ORM logging")
+    api_prefix: str = Field("/api/v1", description="Default prefix bound to all standard FastAPI routers")
 
-    # --- CORS ---
-    cors_origins: str | list[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
+    # --- Security & Network Boundaries ---
+    cors_origins: Union[str, List[str]] = Field(
+        default=["http://localhost:3000", "http://127.0.0.1:3000"],
+        description="Permitted cross-origin hosts (Accepts raw lists or comma-separated env strings)"
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        """Accept comma-separated string or list from env var."""
+    def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """Convert a comma-separated `.env` string into a list of valid URLs."""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
 
-    # --- Database ---
-    database_url: str = (
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/remembench"
+    # --- Core Infrastructure Links ---
+    database_url: str = Field(
+        default="postgresql+asyncpg://postgres:postgres@localhost:5432/remembench",
+        description="Asyncpg dialect PostgreSQL connection string"
     )
 
-    # --- Redis / Celery ---
-    redis_url: str = "redis://localhost:6379/0"
-    celery_broker_url: str = "redis://localhost:6379/1"
-    celery_result_backend: str = "redis://localhost:6379/2"
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        description="Primary Redis Cache DB (used for Tier 2/3 HTTP Caching idempotency)"
+    )
+    celery_broker_url: str = Field(
+        default="redis://localhost:6379/1",
+        description="Celery Worker message broker queue"
+    )
+    celery_result_backend: str = Field(
+        default="redis://localhost:6379/2",
+        description="Celery State synchronization engine"
+    )
 
-    # --- External API Keys ---
-    noaa_cdo_token: str = ""
-    abstract_api_key: str = ""
+    # --- External Data Provider API Keys ---
+    noaa_cdo_token: str = Field("", description="NOAA API Key (National Oceanic Data)")
+    abstract_api_key: str = Field("", description="AbstractAPI Key (Global Holidays provider)")
 
-    # --- Web Search (historical article lookup) ---
-    exa_api_key: str = ""
-    tavily_api_key: str = ""
+    # --- LLM Web Scraper & Orchestration API Keys ---
+    exa_api_key: str = Field("", description="Exa.ai Web Search SDK Key")
+    tavily_api_key: str = Field("", description="Tavily.com Search Network API Key")
 
     # --- Billing / Stripe ---
     stripe_secret_key: str = ""
