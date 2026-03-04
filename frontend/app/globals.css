@@ -595,6 +595,12 @@ a:hover {
   border: 1px solid rgba(52, 211, 153, 0.2);
 }
 
+.badge-sports {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
 .badge-source {
   background: rgba(255, 255, 255, 0.05);
   color: var(--color-text-secondary);

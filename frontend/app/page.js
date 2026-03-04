@@ -37,7 +37,7 @@ const FALLBACK_INDUSTRIES = {
         ],
         categories: [
             "weather", "competitor_promo", "holiday", "news",
-            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event",
+            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event", "sports",
         ],
     },
     pizza_full_service: {
@@ -50,7 +50,7 @@ const FALLBACK_INDUSTRIES = {
         ],
         categories: [
             "weather", "competitor_promo", "holiday", "news",
-            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event",
+            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event", "sports",
         ],
     },
     pizza_delivery: {
@@ -63,7 +63,7 @@ const FALLBACK_INDUSTRIES = {
         ],
         categories: [
             "weather", "competitor_promo", "holiday", "news",
-            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event",
+            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event", "sports",
         ],
     },
 };
@@ -91,6 +91,7 @@ const CATEGORY_COLORS = {
     supply_chain: "#fbbf24",
     labor: "#8b5cf6",
     local_event: "#34d399",
+    sports: "#10b981",
 };
 
 const CATEGORY_ICONS = {
@@ -106,6 +107,7 @@ const CATEGORY_ICONS = {
     supply_chain: "📦",
     labor: "👷",
     local_event: "🎪",
+    sports: "🏅",
 };
 
 /* ------------------------------------------------------------------ *
@@ -392,12 +394,12 @@ export default function Dashboard() {
         const alignedFriday2025 = new Date(lastYearFridayRaw);
         alignedFriday2025.setDate(lastYearFridayRaw.getDate() + shiftDays);
 
-        const alignedSunday2025 = new Date(alignedFriday2025);
-        alignedSunday2025.setDate(alignedFriday2025.getDate() + 2); // End of weekend
+        const alignedEnd2025 = new Date(alignedFriday2025);
+        alignedEnd2025.setDate(alignedFriday2025.getDate() + 6); // 7-day window
 
         return {
             defaultStart: alignedFriday2025.toISOString().split('T')[0],
-            defaultEnd: alignedSunday2025.toISOString().split('T')[0],
+            defaultEnd: alignedEnd2025.toISOString().split('T')[0],
         }
     }, []);
 
@@ -463,10 +465,10 @@ export default function Dashboard() {
                 const diffTime = end.getTime() - start.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                if (diffDays > 3 || diffDays < 0) {
+                if (diffDays > 7 || diffDays < 0) {
                     // Limit the query parameters without mutating the user's UI state mid-selection
                     const newStart = new Date(end);
-                    newStart.setDate(newStart.getDate() - 3);
+                    newStart.setDate(newStart.getDate() - 7);
                     const formattedStart = newStart.toISOString().split('T')[0];
                     params.set("start_date", formattedStart);
                 } else {
