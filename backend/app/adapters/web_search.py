@@ -8,6 +8,7 @@ from app.adapters.base import BaseAdapter
 from app.schemas import ImpactEventCreate
 from app.config import settings
 from app.logging import get_logger
+from app.industries import get_web_search_query
 
 logger = get_logger("web_search_adapter")
 
@@ -68,12 +69,7 @@ class WebSearchAdapter(BaseAdapter):
         year = start_date.year
 
         # Build a tight, industry-specific query targeting EVENT DRIVERS and PROMOTIONS
-        if industry.startswith("pizza"):
-            industry_terms = '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") (promotion OR discount OR deal OR coupon OR BOGO OR offer)'
-        elif industry == "wireless_retail":
-            industry_terms = '("cell phone" OR "wireless store" OR "T-Mobile" OR Verizon OR "AT&T") (promotion OR "new iPhone" OR "device launch" OR "network outage" OR "5g rollout" OR "switch deal" OR "trade-in offer")'
-        else:
-            industry_terms = f'{industry.replace("_", " ")} AND (news OR event OR promotion OR disruption)'
+        industry_terms = get_web_search_query(industry, start_date, end_date)
 
         query = (
             f"{industry_terms} {market} {year}"

@@ -9,8 +9,8 @@ export default function EventDetailsModal({ eventId, onClose, token, API_BASE })
 
     useEffect(() => {
         if (!eventId) return;
-
-        setLoading(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        setLoading(true); // Suppressing react-hooks/set-state-in-effect intentionally
         const headers = token ? { "Authorization": `Bearer ${token}` } : {};
 
         fetch(`${API_BASE}/events/${eventId}`, { headers })

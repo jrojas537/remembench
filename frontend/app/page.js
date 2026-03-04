@@ -548,7 +548,46 @@ export default function Dashboard() {
         } finally {
             setLoading(false);
         }
-    }, [industry, geoFilter, categoryFilter, token, user, startDate, endDate, defaultStart, defaultEnd]);
+    }, [industry, geoFilter, categoryFilter, token, user, startDate, endDate, defaultStart, defaultEnd, isDemo]);
+
+    const handleExportCSV = useCallback(() => {
+        if (!events || events.length === 0) return;
+
+        const headers = ["Date", "Category", "Title", "Source", "Geography", "Severity", "Confidence", "Strategic Intel"];
+
+        const rows = events.map(e => {
+            const date = new Date(e.start_date).toLocaleDateString();
+            const category = e.category || "";
+            const title = e.title ? e.title.replace(/"/g, '""') : "";
+            const source = e.source || "";
+            const geo = e.geo_label || "";
+            const severity = Math.round(e.severity * 100) + "%";
+            const confidence = Math.round(e.confidence * 100) + "%";
+
+            let intel = "";
+            if (e.raw_payload?.details?.detailed_impact) {
+                intel = e.raw_payload.details.detailed_impact.replace(/"/g, '""');
+            }
+
+            return `"${date}","${category}","${title}","${source}","${geo}","${severity}","${confidence}","${intel}"`;
+        });
+
+        const csvContent = [headers.join(","), ...rows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `remembench_${industry}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, [events, industry]);
+
+    const handlePrintPDF = useCallback(() => {
+        window.print();
+    }, []);
 
     // Compute display stats
     const totalEvents = stats
@@ -729,8 +768,26 @@ export default function Dashboard() {
 
                 <div
                     className="control-group"
-                    style={{ alignSelf: "flex-end", marginLeft: "auto" }}
+                    style={{ alignSelf: "flex-end", marginLeft: "auto", flexDirection: "row", gap: "0.5rem" }}
                 >
+                    <button
+                        className="btn"
+                        onClick={handleExportCSV}
+                        disabled={loading || isSearchingWeb || events.length === 0}
+                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "rgba(255,255,255,0.05)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
+                        title="Download Data as CSV"
+                    >
+                        ⬇️ CSV
+                    </button>
+                    <button
+                        className="btn"
+                        onClick={handlePrintPDF}
+                        disabled={loading || isSearchingWeb || events.length === 0}
+                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "rgba(255,255,255,0.05)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
+                        title="Print Dashboard to PDF"
+                    >
+                        📄 PDF
+                    </button>
                     <button
                         className="btn btn-primary"
                         onClick={loadData}
@@ -778,7 +835,7 @@ export default function Dashboard() {
                                 <div className="empty-icon" style={{ fontSize: "3rem", marginBottom: "1rem" }}>👋</div>
                                 <h3>Ready to analyze</h3>
                                 <p style={{ color: "var(--color-text-muted)" }}>
-                                    Select your parameters and click "Run Report" to gather insights.
+                                    Select your parameters and click &quot;Run Report&quot; to gather insights.
                                 </p>
                             </div>
                         ) : isSearchingWeb && events.length === 0 ? (
