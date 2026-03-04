@@ -264,10 +264,6 @@ class IngestionService:
                     "raw_payload": event.raw_payload,
                 }
 
-                # PostGIS geography — parse natively via EWKT wrapper
-                if event.latitude is not None and event.longitude is not None:
-                    row["geography"] = WKTElement(f"POINT({event.longitude} {event.latitude})", srid=4326)
-
                 values.append(row)
 
             stmt = (
@@ -280,6 +276,17 @@ class IngestionService:
             )
             result = await db.execute(stmt)
             inserted_count += result.rowcount
+
+        # Fix Geography columns asyncpg defect
+        await db.execute(
+            text(
+                """
+                UPDATE impact_events
+                SET geography = ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
+                WHERE geography IS NULL AND longitude IS NOT NULL AND latitude IS NOT NULL
+                """
+            )
+        )
 
         await db.commit()
         return inserted_count
