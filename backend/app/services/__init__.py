@@ -16,6 +16,7 @@ import asyncio
 from datetime import datetime
 from difflib import SequenceMatcher
 
+from geoalchemy2.elements import WKTElement
 from geoalchemy2.functions import ST_MakePoint, ST_SetSRID
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -263,9 +264,9 @@ class IngestionService:
                     "raw_payload": event.raw_payload,
                 }
 
-                # PostGIS geography — parse natively via EWKT string
+                # PostGIS geography — parse natively via EWKT wrapper
                 if event.latitude is not None and event.longitude is not None:
-                    row["geography"] = f"SRID=4326;POINT({event.longitude} {event.latitude})"
+                    row["geography"] = WKTElement(f"POINT({event.longitude} {event.latitude})", srid=4326)
 
                 values.append(row)
 
