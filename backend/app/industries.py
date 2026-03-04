@@ -85,7 +85,7 @@ PIZZA_GDELT_QUERIES = [
     "protest OR demonstration OR road closure OR parade",
     '"minimum wage" OR "labor shortage" OR "restaurant workers"',
     '"cheese prices" OR "flour prices" OR "food costs" OR "ingredient prices"',
-    '("Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Dominos") (promotion OR discount OR launch)',
+    '("Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Dominos" OR "Buddy\'s") (promotion OR discount OR launch)',
 ]
 
 
@@ -266,8 +266,8 @@ def get_web_search_query(industry_key: str, start_date: datetime, end_date: date
     """Return the targeted search terms for web search adapters based on the industry and time period."""
     if industry_key.startswith("pizza"):
         if start_date.month == 3 or end_date.month == 3:
-            return '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "Pi Day" OR "3.14")'
-        return '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns") (promotion OR discount OR deal OR coupon OR BOGO OR offer)'
+            return '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "Pi Day" OR "3.14")'
+        return '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s") (promotion OR discount OR deal OR coupon OR BOGO OR offer)'
     
     if industry_key.startswith("wireless"):
         return '("cell phone" OR "wireless store" OR "T-Mobile" OR Verizon OR "AT&T") (promotion OR "new iPhone" OR "device launch" OR "network outage" OR "5g rollout" OR "switch deal" OR "trade-in offer")'
