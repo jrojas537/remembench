@@ -245,11 +245,17 @@ def get_industry(key: str) -> IndustryConfig:
 
 def get_related_industry_keys(industry_key: str) -> list[str]:
     """Return a list of industry keys for the given industry.
-    If it's an '_all' key, return all keys in its group."""
+    If it's an '_all' key, return all keys in its group.
+    If it's a specific child key, also include the parent '_all' key."""
     try:
         config = get_industry(industry_key)
         if industry_key.endswith("_all"):
             return [k for k, v in INDUSTRIES.items() if v.group == config.group]
+            
+        parent_all = f"{config.group}_all"
+        if parent_all in INDUSTRIES and parent_all != industry_key:
+            return [industry_key, parent_all]
+            
         return [industry_key]
     except KeyError:
         return [industry_key]
