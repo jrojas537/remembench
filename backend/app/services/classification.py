@@ -125,7 +125,9 @@ Each object in the array must match this schema:
                 "confidence": float(res.get("confidence", 0.5)),
                 "category": str(res.get("category", "news")),
                 "summary": str(res.get("summary", "No summary provided by LLM.")),
-                "competitor_actions": res.get("competitor_actions", [])
+                "competitor_actions": res.get("competitor_actions", []),
+                "details": res.get("details", {}),
+                "event_date": res.get("event_date", None)
             } for res in results]
             
         except Exception as e:
