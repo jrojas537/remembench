@@ -108,11 +108,11 @@ export default function ProfileSettings({ onClose, activeIndustries }) {
                             <button onClick={handleManageSubscription} disabled={portalLoading} style={{ background: "none", border: "none", color: "var(--color-text-primary)", fontSize: "0.875rem", textDecoration: "underline", cursor: "pointer" }}>
                                 {portalLoading ? "Loading..." : "Manage Billing"}
                             </button>
-                        ) : (
+                        ) : user.tier !== "premium" ? (
                             <button onClick={() => { onClose(); router.push("/pricing"); }} style={{ background: "none", border: "none", color: "var(--color-text-primary)", fontSize: "0.875rem", textDecoration: "underline", cursor: "pointer" }}>
-                                Upgrade to Pro
+                                Upgrade to Premium
                             </button>
-                        )}
+                        ) : null}
                     </div>
                 </div>
 
