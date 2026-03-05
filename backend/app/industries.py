@@ -92,7 +92,7 @@ PIZZA_MARKETS = [
 
 CAR_WASH_GDELT_QUERIES = [
     '"car wash" (promotion OR deal OR opening OR discount)',
-    '("Mister Car Wash" OR "Tommy\'s Express" OR "Zips" OR "Take 5") (acquisition OR opening OR promotion)',
+    '("Mister Car Wash" OR "Tommy\'s" OR "El Car Wash" OR "Jax Kar Wash" OR "Clean Express") (acquisition OR opening OR promotion)',
     'weather (pollen OR dust OR mud OR snow OR "saharan dust")',
     '"water restrictions" OR "drought" OR "climate"',
 ]
@@ -336,7 +336,7 @@ def get_web_search_query(industry_key: str, start_date: datetime, end_date: date
         return base_pizza_query
         
     if industry_key.startswith("car_wash"):
-        return '("car wash" OR "auto wash" OR "Mister Car Wash" OR "Tommy\'s Express" OR "Zips") (promotion OR discount OR opening OR "free wash" OR weather OR "pollen" OR "dust")'
+        return '("car wash" OR "Mister Car Wash" OR "Tommy\'s" OR "El Car Wash" OR "Jax Kar Wash" OR "Clean Express") (promotion OR discount OR opening OR "free wash" OR weather OR "pollen")'
     
     # Generic fallback
     label = get_industry(industry_key).label
