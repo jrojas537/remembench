@@ -38,18 +38,26 @@ class BaseAdapter(ABC):
         self.requires_llm_classification: bool = False
 
     async def _get_client(self) -> httpx.AsyncClient:
-        """Get the global reusable async HTTP client tied to the FastAPI application state."""
-        from app.main import app
+        """Get a reusable async HTTP client tied uniquely to the current event loop.
         
-        # In testing contexts or isolated chron boundaries, app.state might not be booted.
-        # Fallback to a local client if the global one doesn't exist on state.
-        if not hasattr(app.state, "http_client"):
-            app.state.http_client = httpx.AsyncClient(
+        This prevents 'Event loop is closed' RuntimeErrors when Celery workers 
+        spawn multiple asynchronous environments dynamically over isolated loops.
+        """
+        import asyncio
+        import weakref
+        
+        if not hasattr(BaseAdapter, "_loop_clients"):
+            BaseAdapter._loop_clients = weakref.WeakKeyDictionary()
+            
+        loop = asyncio.get_running_loop()
+        
+        if loop not in BaseAdapter._loop_clients:
+            BaseAdapter._loop_clients[loop] = httpx.AsyncClient(
                 limits=httpx.Limits(max_connections=50, max_keepalive_connections=15),
                 timeout=httpx.Timeout(30.0, read=60.0)
             )
             
-        return app.state.http_client
+        return BaseAdapter._loop_clients[loop]
 
     async def close(self) -> None:
         """The client is managed globally; no local cleanup required natively."""
