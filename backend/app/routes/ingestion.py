@@ -126,10 +126,13 @@ async def get_task_status(task_id: str) -> dict[str, Any]:
     
     result = AsyncResult(task_id, app=celery_app)
     
-    # Optional parsing of result if SUCCESS
+    # Optional parsing of result if SUCCESS or FAILURE
     res_data = None
     if result.ready():
-        res_data = result.result
+        if result.status == "FAILURE" and isinstance(result.result, Exception):
+            res_data = str(result.result)
+        else:
+            res_data = result.result
         
     return {
         "task_id": task_id,
