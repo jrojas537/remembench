@@ -379,10 +379,8 @@ export default function Dashboard() {
                     <button
                         className="btn"
                         onClick={handleSaveView}
-                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "rgba(99, 102, 241, 0.15)", color: "var(--color-accent-indigo)", cursor: "pointer", fontWeight: "600", transition: "background 0.2s" }}
+                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "var(--color-bg-glass)", color: "var(--color-accent-indigo)", cursor: "pointer", fontWeight: "600", transition: "background 0.2s" }}
                         title="Save this view to your profile"
-                        onMouseOver={e => e.currentTarget.style.background = "rgba(99, 102, 241, 0.25)"}
-                        onMouseOut={e => e.currentTarget.style.background = "rgba(99, 102, 241, 0.15)"}
                     >
                         🔖 Save View
                     </button>
@@ -390,7 +388,7 @@ export default function Dashboard() {
                         className="btn"
                         onClick={handleExportCSV}
                         disabled={loading || isSearchingWeb || events.length === 0}
-                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "rgba(255,255,255,0.05)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
+                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "var(--color-bg-glass)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
                         title="Download Data as CSV"
                     >
                         ⬇️ CSV
@@ -399,7 +397,7 @@ export default function Dashboard() {
                         className="btn"
                         onClick={handlePrintPDF}
                         disabled={loading || isSearchingWeb || events.length === 0}
-                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "rgba(255,255,255,0.05)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
+                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "var(--color-bg-glass)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
                         title="Print Dashboard to PDF"
                     >
                         📄 PDF
@@ -420,10 +418,10 @@ export default function Dashboard() {
                 {hasRun && (events.length > 0 || isGeneratingBriefing) && !isDemo && (
                     <div style={{
                         gridColumn: "1 / -1",
-                        background: "rgba(13, 19, 33, 0.8)",
+                        background: "var(--color-bg-card)",
                         backdropFilter: "blur(16px)",
-                        border: "1px solid rgba(34, 211, 238, 0.3)",
-                        boxShadow: "0 0 20px rgba(34, 211, 238, 0.1)",
+                        border: "1px solid var(--color-border)",
+                        boxShadow: "var(--shadow-md)",
                         borderRadius: "1rem",
                         padding: "1.5rem",
                         display: "flex",
@@ -450,13 +448,13 @@ export default function Dashboard() {
                                     </p>
 
                                     <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.85rem" }}>
-                                        <div style={{ background: "rgba(0,0,0,0.3)", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--color-border)" }}>
+                                        <div style={{ background: "var(--color-bg-glass)", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--color-border)" }}>
                                             <span style={{ color: "var(--color-text-muted)", marginRight: "0.5rem" }}>Threat Level:</span>
                                             <strong style={{ color: aiBriefing.overall_threat_score > 0.6 ? "#ef4444" : "var(--color-accent-cyan)" }}>
                                                 {(aiBriefing.overall_threat_score * 10).toFixed(1)} / 10
                                             </strong>
                                         </div>
-                                        <div style={{ background: "rgba(0,0,0,0.3)", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--color-border)" }}>
+                                        <div style={{ background: "var(--color-bg-glass)", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--color-border)" }}>
                                             <span style={{ color: "var(--color-text-muted)", marginRight: "0.5rem" }}>Sentiment:</span>
                                             <strong style={{ color: aiBriefing.market_sentiment === "Bearish" ? "#ef4444" : "var(--color-accent-cyan)" }}>
                                                 {aiBriefing.market_sentiment}
