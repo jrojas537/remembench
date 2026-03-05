@@ -155,9 +155,10 @@ export default function ProfileSettings({ onClose, activeIndustries }) {
                             className="form-select"
                         >
                             <option value="">None (All Markets)</option>
-                            {availableMarkets.map((m) => (
-                                <option key={m} value={m}>{m}</option>
-                            ))}
+                            {availableMarkets.map((m) => {
+                                const marketName = typeof m === 'string' ? m : m.geo_label;
+                                return <option key={marketName} value={marketName}>{marketName}</option>;
+                            })}
                         </select>
                     </div>
 
