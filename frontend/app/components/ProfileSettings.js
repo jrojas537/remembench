@@ -162,6 +162,25 @@ export default function ProfileSettings({ onClose, activeIndustries }) {
                         </select>
                     </div>
 
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        <label style={{ fontSize: "0.875rem" }}>Theme Preference</label>
+                        <select
+                            value={themePrefs}
+                            onChange={(e) => {
+                                setThemePrefs(e.target.value);
+                                if (e.target.value === "dark") {
+                                    document.documentElement.classList.add("dark-theme");
+                                } else {
+                                    document.documentElement.classList.remove("dark-theme");
+                                }
+                            }}
+                            className="form-select"
+                        >
+                            <option value="light">Light Earth Tone (Default)</option>
+                            <option value="dark">Deep Navy (Dark Theme)</option>
+                        </select>
+                    </div>
+
                     <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "1rem" }}>
                         <button type="submit" disabled={saving} className="btn-primary">
                             {saving ? "Saving..." : "Save Preferences"}

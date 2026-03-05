@@ -50,6 +50,12 @@ export function AuthProvider({ children }) {
             if (res.ok) {
                 const userData = await res.json();
                 setUser(userData);
+
+                if (userData.preferences?.theme === "dark") {
+                    document.documentElement.classList.add("dark-theme");
+                } else {
+                    document.documentElement.classList.remove("dark-theme");
+                }
             } else {
                 // Token is invalid/expired
                 logout();
