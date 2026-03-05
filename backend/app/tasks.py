@@ -252,3 +252,51 @@ def run_historical_backfill(
         return results
 
     return _run_async(_ingest())
+
+
+# ---------------------------------------------------------------------------
+#  Task: Live Dashboard Ingestion
+# ---------------------------------------------------------------------------
+
+@celery_app.task(name="app.tasks.run_live_ingestion", bind=True)
+def run_live_ingestion(
+    self,
+    start_date: str,
+    end_date: str,
+    industry: str,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    geo_label: str | None = None,
+):
+    """
+    On-demand background ingestion for the live frontend dashboard.
+
+    Called via the /api/v1/ingestion/run endpoint when a user requests
+    a live dashboard refresh, preventing HTTP blocking on LLM queries.
+    """
+    from app.services import IngestionService
+    from app.database import async_session_factory
+
+    start = datetime.fromisoformat(start_date)
+    end = datetime.fromisoformat(end_date)
+
+    async def _ingest():
+        service = IngestionService()
+        async with async_session_factory() as db:
+            try:
+                result = await service.ingest(
+                    db=db,
+                    start_date=start,
+                    end_date=end,
+                    industry=industry,
+                    latitude=latitude,
+                    longitude=longitude,
+                    geo_label=geo_label,
+                )
+                await db.commit()
+                return result
+            except Exception:
+                await db.rollback()
+                raise
+
+    return _run_async(_ingest())

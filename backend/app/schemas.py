@@ -15,7 +15,22 @@ from datetime import datetime
 from typing import List, Dict, Any
 
 from pydantic import BaseModel, Field, field_validator
+from typing import Literal
 
+# --------------------------------------------------------------------------- #
+#  Nested Entity Sub-Schemas
+# --------------------------------------------------------------------------- #
+
+class CompetitorAction(BaseModel):
+    name: str = Field(..., description="Target competitor entity name (e.g. 'Verizon', 'Domino\\'s')")
+    action_type: Literal["Promotion", "Outage", "Acquisition", "Price Change", "Legal", "General"] = Field(
+        ..., description="Standardized categorization of what the entity did."
+    )
+    threat_level: float = Field(
+        0.5, ge=0.0, le=1.0, 
+        description="Scales how dangerous/impactful this move is to our operations."
+    )
+    summary: str = Field(..., description="Short AI-generated semantic summary of the action.")
 
 # --------------------------------------------------------------------------- #
 #  Impact Event Schemas
@@ -59,6 +74,12 @@ class ImpactEventBase(BaseModel):
     description: str | None = Field(
         None,
         description="Detailed context for analysts",
+    )
+    
+    # --- Extracted Entities ---
+    competitor_actions: List[CompetitorAction] = Field(
+        default=[],
+        description="Structured actions taken by rival competitors within this event"
     )
 
     # --- Impact Scoring ---
@@ -207,5 +228,12 @@ class AIBriefingRequest(BaseModel):
     industry: str
     events: List[Dict[str, Any]]
 
+class ExecutiveBriefing(BaseModel):
+    executive_summary: str = Field(..., description="Paragraph overviewing the broad impact and significance.")
+    overall_threat_score: float = Field(..., ge=0.0, le=1.0, description="Aggregated metric of negative pressure in this market.")
+    key_opportunities: list[str] = Field(..., description="Bullet points outlining market gaps or promotional opportunities.")
+    immediate_actions_recommended: list[str] = Field(..., description="Tactical next steps for operators based on intelligence.")
+    market_sentiment: Literal["Bullish", "Bearish", "Volatile", "Stable"]
+
 class AIBriefingResponse(BaseModel):
-    briefing: str
+    briefing: ExecutiveBriefing

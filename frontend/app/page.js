@@ -5,359 +5,19 @@ import { useAuth } from "./contexts/AuthContext";
 import ProfileSettings from "./components/ProfileSettings";
 import EventDetailsModal from "./components/EventDetailsModal";
 import Link from "next/link";
+import EventFeed from "./components/EventFeed";
+import MetricCharts from "./components/MetricCharts";
 import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-    Legend,
-    LineChart,
-    Line,
-} from "recharts";
-
-/* ------------------------------------------------------------------ *
- *  Industry Registry — matches backend's industries.py                *
- *  In production, this would be fetched from GET /api/v1/industries   *
- * ------------------------------------------------------------------ */
-
-const FALLBACK_INDUSTRIES = {
-    pizza_all: {
-        label: "Pizza (ALL)",
-        icon: "🍕",
-        group: "pizza",
-        markets: [
-            "Detroit Metro", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
-            "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy",
-        ],
-        categories: [
-            "weather", "competitor_promo", "holiday", "news",
-            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event", "sports",
-        ],
-    },
-    pizza_full_service: {
-        label: "Pizza — Full Service",
-        icon: "🍽️",
-        group: "pizza",
-        markets: [
-            "Detroit Metro", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
-            "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy",
-        ],
-        categories: [
-            "weather", "competitor_promo", "holiday", "news",
-            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event", "sports",
-        ],
-    },
-    pizza_delivery: {
-        label: "Pizza — Delivery",
-        icon: "🛵",
-        group: "pizza",
-        markets: [
-            "Detroit Metro", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
-            "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy",
-        ],
-        categories: [
-            "weather", "competitor_promo", "holiday", "news",
-            "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event", "sports",
-        ],
-    },
-};
-
-/* ------------------------------------------------------------------ *
- *  Constants                                                          *
- * ------------------------------------------------------------------ */
-
-const API_BASE =
-    typeof window !== "undefined"
-        ? (process.env.NEXT_PUBLIC_API_URL || "/api/v1")
-        : "/api/v1";
-
-// Extended color map covering all industries' categories
-const CATEGORY_COLORS = {
-    weather: "#38bdf8",
-    competitor_promo: "#f97316",
-    outage: "#ef4444",
-    holiday: "#a78bfa",
-    news: "#2dd4bf",
-    internal_promo: "#6366f1",
-    system_issue: "#fb923c",
-    delivery_disruption: "#f472b6",
-    food_safety: "#dc2626",
-    supply_chain: "#fbbf24",
-    labor: "#8b5cf6",
-    local_event: "#34d399",
-    sports: "#10b981",
-};
-
-const CATEGORY_ICONS = {
-    weather: "🌦️",
-    competitor_promo: "📢",
-    outage: "⚠️",
-    holiday: "🎉",
-    news: "📰",
-    internal_promo: "🏷️",
-    system_issue: "🔧",
-    delivery_disruption: "🚗",
-    food_safety: "🏥",
-    supply_chain: "📦",
-    labor: "👷",
-    local_event: "🎪",
-    sports: "🏅",
-};
-
-/* ------------------------------------------------------------------ *
- *  Demo Data — industry-specific samples                              *
- * ------------------------------------------------------------------ */
-
-const WIRELESS_DEMO_EVENTS = [
-    {
-        category: "weather", subcategory: "blizzard",
-        title: "Blizzard: 35cm snowfall in NYC metro area",
-        description: "Major winter storm dropped 35cm of snow across the Northeast, severely limiting foot traffic to retail stores for 3 consecutive days.",
-        severity: 0.92, confidence: 0.88, geo_label: "New York City", daysAgo: 365 + 45,
-    },
-    {
-        category: "competitor_promo", subcategory: "carrier_announcement",
-        title: "[VERIZON] Buy One Get One Free — iPhone 15 Pro",
-        description: "Verizon announced aggressive BOGO promotion on iPhone 15 Pro with new line activation, running for 2 weeks nationwide.",
-        severity: 0.85, confidence: 0.92, geo_label: "National", daysAgo: 365 + 30,
-    },
-    {
-        category: "holiday", subcategory: "public_holiday",
-        title: "Presidents' Day Weekend",
-        description: "Federal holiday weekend. Historically one of the top 10 wireless retail weekends due to carrier promotions.",
-        severity: 0.55, confidence: 0.95, geo_label: "National", daysAgo: 365 + 20,
-    },
-    {
-        category: "outage", subcategory: "network_outage",
-        title: "AT&T Nationwide Network Outage — 12 hours",
-        description: "Major AT&T service disruption affected millions of customers. Resulted in surge of walk-in traffic to competitor stores.",
-        severity: 0.95, confidence: 0.87, geo_label: "National", daysAgo: 365 + 15,
-    },
-    {
-        category: "news", subcategory: "local_disruption",
-        title: "Super Bowl LVIII — Las Vegas",
-        description: "Major sporting event drew attention away from retail. Historically reduces non-essential shopping on game day by 15-25%.",
-        severity: 0.45, confidence: 0.78, geo_label: "National", daysAgo: 365 + 25,
-    },
-    {
-        category: "weather", subcategory: "extreme_cold",
-        title: "Extreme Cold: -18°C low in Chicago",
-        description: "Polar vortex conditions brought dangerously cold temperatures to the Midwest, reducing foot traffic by an estimated 40%.",
-        severity: 0.78, confidence: 0.85, geo_label: "Chicago", daysAgo: 365 + 40,
-    },
-];
-
-const PIZZA_DEMO_EVENTS = [
-    {
-        category: "weather", subcategory: "heavy_snow",
-        title: "Heavy Snow: 25cm in Detroit metro",
-        description: "Lake-effect snow event dropped 25cm across metro Detroit, shutting down roads and boosting delivery demand while reducing dine-in traffic.",
-        severity: 0.82, confidence: 0.9, geo_label: "Detroit", daysAgo: 365 + 35,
-    },
-    {
-        category: "competitor_promo", subcategory: "restaurant_promotion",
-        title: "[DOMINOS] 50% Off All Menu-Price Pizzas",
-        description: "Domino's launched nationwide 50% off promotion for online orders, running for 2 weeks. Significant competitive pressure on local pizzerias.",
-        severity: 0.78, confidence: 0.88, geo_label: "National", daysAgo: 365 + 28,
-    },
-    {
-        category: "holiday", subcategory: "public_holiday",
-        title: "Super Bowl Sunday",
-        description: "Historically the #1 pizza delivery day of the year. Delivery volume spikes 40-60% over normal Sunday. Critical staffing day.",
-        severity: 0.95, confidence: 0.97, geo_label: "National", daysAgo: 365 + 22,
-    },
-    {
-        category: "delivery_disruption", subcategory: "platform_issue",
-        title: "DoorDash Platform Outage — Detroit Metro",
-        description: "DoorDash experienced a 4-hour outage affecting the Detroit metro area. Third-party delivery orders dropped to zero during window.",
-        severity: 0.7, confidence: 0.85, geo_label: "Detroit", daysAgo: 365 + 18,
-    },
-    {
-        category: "food_safety", subcategory: "inspection_or_recall",
-        title: "FDA: Mozzarella Cheese Recall — Midwest Region",
-        description: "FDA issued recall on mozzarella from a major Midwest distributor due to potential contamination. Affected supply for multiple restaurants.",
-        severity: 0.88, confidence: 0.92, geo_label: "Detroit", daysAgo: 365 + 12,
-    },
-    {
-        category: "supply_chain", subcategory: "ingredient_costs",
-        title: "Cheese Prices Hit 18-Month High",
-        description: "Block cheese prices rose 22% over 6 weeks due to supply constraints. Impacts menu pricing and profit margins for all pizza operators.",
-        severity: 0.65, confidence: 0.8, geo_label: "National", daysAgo: 365 + 8,
-    },
-    {
-        category: "labor", subcategory: "staffing",
-        title: "Michigan Minimum Wage Increase Takes Effect",
-        description: "Michigan minimum wage increased to $12.50/hr. Impacts labor costs for restaurant and delivery operations statewide.",
-        severity: 0.6, confidence: 0.95, geo_label: "Detroit", daysAgo: 365 + 3,
-    },
-    {
-        category: "local_event", subcategory: "festival",
-        title: "Detroit Auto Show — Downtown Events",
-        description: "North American International Auto Show brings 800,000+ visitors to downtown Detroit over 2 weeks. Boosts downtown restaurant traffic significantly.",
-        severity: 0.72, confidence: 0.82, geo_label: "Detroit", daysAgo: 365 + 42,
-    },
-];
-
-/**
- * Generates an array of synthetic event documents mapping directly 
- * to the `ImpactEventResponse` schema for local demo purposes.
- * 
- * @param {string} industry - The target industry group key (e.g. "pizza_all").
- * @returns {Array<Object>} Synthetic array of complete event objects.
- */
-function generateDemoData(industry = "wireless_retail") {
-    const isPizza = industry.startsWith("pizza");
-    const entries = isPizza ? PIZZA_DEMO_EVENTS : WIRELESS_DEMO_EVENTS;
-    const now = new Date();
-
-    return entries.map((entry) => {
-        const eventDate = new Date(now);
-        eventDate.setDate(eventDate.getDate() - entry.daysAgo);
-        return {
-            id: crypto.randomUUID(),
-            ...entry,
-            source: entry.category === "weather" ? "open-meteo" : "gdelt",
-            start_date: eventDate.toISOString(),
-            end_date: eventDate.toISOString(),
-            created_at: now.toISOString(),
-            updated_at: now.toISOString(),
-            industry,
-        };
-    });
-}
-
-/**
- * Mocks the `anomaly_stats` aggregate route endpoint providing dynamic 
- * categories explicitly tied to the current industry configuration.
- *
- * @param {string} industry - The target dashboard industry string.
- * @returns {Object} JSON mapping reflecting the standard `/api/v1/events/stats/summary` schema.
- */
-function generateDemoStats(industry = "wireless_retail") {
-    const isPizza = industry.startsWith("pizza");
-
-    if (isPizza) {
-        return {
-            industry,
-            categories: {
-                weather: { count: 38, avg_severity: 0.65 },
-                competitor_promo: { count: 15, avg_severity: 0.68 },
-                holiday: { count: 28, avg_severity: 0.55 },
-                delivery_disruption: { count: 12, avg_severity: 0.62 },
-                food_safety: { count: 6, avg_severity: 0.78 },
-                supply_chain: { count: 9, avg_severity: 0.58 },
-                labor: { count: 7, avg_severity: 0.52 },
-                local_event: { count: 16, avg_severity: 0.48 },
-            },
-        };
-    }
-
-    return {
-        industry,
-        categories: {
-            weather: { count: 47, avg_severity: 0.68 },
-            competitor_promo: { count: 23, avg_severity: 0.72 },
-            outage: { count: 8, avg_severity: 0.81 },
-            holiday: { count: 34, avg_severity: 0.52 },
-            news: { count: 19, avg_severity: 0.41 },
-        },
-    };
-}
-
-/* ------------------------------------------------------------------ *
- *  Sub-Components                                                     *
- * ------------------------------------------------------------------ */
-
-function StatCard({ icon, value, label, color }) {
-    return (
-        <div className="stat-card">
-            <div className="stat-icon">{icon}</div>
-            <div className="stat-value" style={{ color }}>
-                {value}
-            </div>
-            <div className="stat-label">{label}</div>
-        </div>
-    );
-}
-
-function SeverityBar({ severity }) {
-    const pct = Math.round(severity * 100);
-    const cls =
-        severity >= 0.7
-            ? "severity-high"
-            : severity >= 0.4
-                ? "severity-medium"
-                : "severity-low";
-    return (
-        <div className="severity-bar" title={`Impact: ${pct}%`}>
-            <div
-                className={`severity-bar-fill ${cls}`}
-                style={{ width: `${pct}%` }}
-            />
-        </div>
-    );
-}
-
-function CategoryBadge({ category }) {
-    return (
-        <span className={`badge badge-${category}`}>
-            {CATEGORY_ICONS[category] || "📌"} {(category || "").replace(/_/g, " ")}
-        </span>
-    );
-}
-
-function EventItem({ event, onClick }) {
-    const date = new Date(event.start_date);
-    const monthNames = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
-
-    return (
-        <div className="event-item" data-category={event.category} onClick={onClick} style={{ cursor: "pointer" }}>
-            <div className="event-date">
-                <span className="day">{date.getDate()}</span>
-                {monthNames[date.getMonth()]} {date.getFullYear()}
-            </div>
-            <div>
-                <div className="event-title">{event.title}</div>
-                <div className="event-desc">{event.description}</div>
-                <div style={{ marginTop: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-                    <CategoryBadge category={event.category} />
-                    <span className="badge badge-source">🌐 Source: {event.source}</span>
-                    {event.geo_label && (
-                        <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
-                            📍 {event.geo_label}
-                        </span>
-                    )}
-                </div>
-            </div>
-            <div className="event-meta">
-                <div style={{ width: 80 }}>
-                    <SeverityBar severity={event.severity} />
-                </div>
-                <span
-                    style={{
-                        fontSize: "0.7rem",
-                        color: "var(--color-text-muted)",
-                    }}
-                >
-                    {Math.round(event.confidence * 100)}% conf
-                </span>
-            </div>
-        </div>
-    );
-}
+    FALLBACK_INDUSTRIES,
+    API_BASE,
+    CATEGORY_ICONS
+} from "./lib/constants";
 
 /* ------------------------------------------------------------------ *
  *  Main Dashboard Page                                                *
  * ------------------------------------------------------------------ */
+
+import { useDashboardData } from "./hooks/useDashboardData";
 
 export default function Dashboard() {
     const { user, token } = useAuth();
@@ -365,27 +25,11 @@ export default function Dashboard() {
 
     const [industries, setIndustries] = useState(null);
     const [industry, setIndustry] = useState("pizza_all");
-    const [events, setEvents] = useState([]);
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [hasRun, setHasRun] = useState(false);
+
+    // We defer hook variables until default dates are computed
     const [geoFilter, setGeoFilter] = useState("Detroit Metro");
     const [categoryFilter, setCategoryFilter] = useState("");
-    const [isDemo, setIsDemo] = useState(false);
-    const [isSearchingWeb, setIsSearchingWeb] = useState(false);
-    const [searchResultMsg, setSearchResultMsg] = useState(null);
     const [selectedEventId, setSelectedEventId] = useState(null);
-    const [aiBriefing, setAiBriefing] = useState(null);
-    const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
-
-    // AI briefing wrapper logic for better markdown rendering
-    const formattedBriefing = useMemo(() => {
-        if (!aiBriefing) return null;
-        // Simple logic to convert **bold** text effectively since we aren't using a full markdown parser library here
-        let html = aiBriefing.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\ng/, "<br/>");
-        return html;
-    }, [aiBriefing]);
 
     const { defaultStart, defaultEnd } = useMemo(() => {
         // Find equivalent weekend map from 2026 -> 2025
@@ -421,6 +65,33 @@ export default function Dashboard() {
 
     const [startDate, setStartDate] = useState(defaultStart);
     const [endDate, setEndDate] = useState(defaultEnd);
+
+    // Call the decoupled hook
+    const {
+        events,
+        stats,
+        loading,
+        hasRun,
+        isDemo,
+        isSearchingWeb,
+        searchResultMsg,
+        aiBriefing,
+        isGeneratingBriefing,
+        loadData
+    } = useDashboardData({
+        industry,
+        geoFilter,
+        categoryFilter,
+        startDate,
+        endDate,
+        defaultStart,
+        defaultEnd,
+        user,
+        token
+    });
+
+    // Removed legacy `formattedBriefing` Markdown regex parsed string handling natively 
+    // since the API now yields an explicitly typed ExecutiveBriefing object.
 
     // Ensure dashboard starts scrolled to the top
     useEffect(() => {
@@ -459,150 +130,6 @@ export default function Dashboard() {
         setGeoFilter(""); // Reset only on manual change
         setCategoryFilter("");
     };
-
-    const loadData = useCallback(async () => {
-        setLoading(true);
-        setHasRun(true);
-        setSearchResultMsg(null);
-        setCategoryFilter(""); // Un-pin category filter so new web events aren't hidden
-        try {
-            // Setup parameters
-            const isPremium = user?.tier === "pro";
-
-            const params = new URLSearchParams({
-                limit: "50",
-                industry,
-            });
-
-            // Handle date ranges and constraints
-            if (!isPremium) {
-                const start = new Date(startDate || defaultStart);
-                const end = new Date(endDate || defaultEnd);
-                const diffTime = end.getTime() - start.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                if (diffDays > 7 || diffDays < 0) {
-                    // Limit the query parameters without mutating the user's UI state mid-selection
-                    const newStart = new Date(end);
-                    newStart.setDate(newStart.getDate() - 7);
-                    const formattedStart = newStart.toISOString().split('T')[0];
-                    params.set("start_date", formattedStart);
-                } else {
-                    params.set("start_date", start.toISOString().split('T')[0]);
-                }
-                params.set("end_date", end.toISOString().split('T')[0]);
-            } else {
-                if (startDate) params.set("start_date", startDate);
-                if (endDate) params.set("end_date", endDate);
-            }
-
-            if (geoFilter) params.set("geo_label", geoFilter);
-            if (categoryFilter) params.set("category", categoryFilter);
-
-            const headers = token ? { "Authorization": `Bearer ${token}` } : {};
-
-            // Synchronize parameters for the summary endpoint so UI matches the exact range requested
-            const statsParams = new URLSearchParams(params);
-            statsParams.delete("limit");
-
-            const [eventsRes, statsRes] = await Promise.all([
-                fetch(`${API_BASE}/events/?${params}`, { headers }).then((r) => {
-                    if (!r.ok) throw new Error("API unavailable");
-                    return r.json();
-                }),
-                fetch(
-                    `${API_BASE}/events/stats/summary?${statsParams}`,
-                    { headers }
-                ).then((r) => {
-                    if (!r.ok) throw new Error("API unavailable");
-                    return r.json();
-                }),
-            ]);
-
-            // Show immediate results from DB if any exist (e.g. weather)
-            setEvents(eventsRes || []);
-            setStats(statsRes || { categories: {} });
-            setLoading(false);
-
-            if (!isDemo) {
-                setIsSearchingWeb(true);
-                try {
-                    const runParams = new URLSearchParams();
-                    runParams.set("start_date", params.get("start_date"));
-                    runParams.set("end_date", params.get("end_date"));
-                    runParams.set("industry", industry);
-                    if (geoFilter) runParams.set("geo_label", geoFilter);
-
-                    await fetch(`${API_BASE}/ingestion/run?${runParams}`, {
-                        method: "POST",
-                        headers
-                    });
-
-                    // Re-fetch data after ingestion finishes (now with new web events)
-                    const [newEventsRes, newStatsRes] = await Promise.all([
-                        fetch(`${API_BASE}/events/?${params}`, { headers }).then((r) => r.json()),
-                        fetch(`${API_BASE}/events/stats/summary?${statsParams}`, { headers }).then((r) => r.json()),
-                    ]);
-
-                    const newEventsCount = newEventsRes?.length || 0;
-                    const oldEventsCount = eventsRes?.length || 0;
-                    if (newEventsCount <= oldEventsCount) {
-                        setSearchResultMsg("Live web search complete. No new events found.");
-                        setTimeout(() => setSearchResultMsg(null), 5000);
-                    } else {
-                        setSearchResultMsg(`Found ${newEventsCount - oldEventsCount} new events from the web!`);
-                        setTimeout(() => setSearchResultMsg(null), 4000);
-                    }
-
-                    setEvents(newEventsRes || []);
-                    setStats(newStatsRes || { categories: {} });
-
-                    // Generate AI Briefing
-                    setIsGeneratingBriefing(true);
-                    try {
-                        const briefRes = await fetch(`${API_BASE}/events/briefing`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                ...headers
-                            },
-                            body: JSON.stringify({
-                                industry: industry,
-                                events: newEventsRes || []
-                            })
-                        });
-                        const briefData = await briefRes.json();
-                        setAiBriefing(briefData.briefing);
-                    } catch (e) {
-                        console.error("AI Briefing failed:", e);
-                        setAiBriefing("Could not generate briefing at this time.");
-                    } finally {
-                        setIsGeneratingBriefing(false);
-                    }
-                } catch (e) {
-                    console.error("Live web search failed:", e);
-                    setSearchResultMsg("Web search timed out or encountered an error.");
-                    setTimeout(() => setSearchResultMsg(null), 5000);
-                } finally {
-                    setIsSearchingWeb(false);
-                }
-            }
-            setIsDemo(false);
-        } catch {
-            // Backend not running — use industry-specific demo data
-            const demoEvents = generateDemoData(industry);
-            const filtered = demoEvents.filter((e) => {
-                if (geoFilter && e.geo_label !== geoFilter && e.geo_label !== "National") return false;
-                if (categoryFilter && e.category !== categoryFilter) return false;
-                return true;
-            });
-            setEvents(filtered);
-            setStats(generateDemoStats(industry));
-            setIsDemo(true);
-        } finally {
-            setLoading(false);
-        }
-    }, [industry, geoFilter, categoryFilter, token, user, startDate, endDate, defaultStart, defaultEnd, isDemo]);
 
     const handleExportCSV = useCallback(() => {
         if (!events || events.length === 0) return;
@@ -915,8 +442,41 @@ export default function Dashboard() {
                                 <p style={{ margin: 0, color: "var(--color-text-muted)", lineHeight: "1.6", fontSize: "0.95rem" }}>
                                     Analyzing market trends, competitive actions, and environmental disruptions...
                                 </p>
-                            ) : formattedBriefing ? (
-                                <p style={{ margin: 0, color: "var(--color-text-primary)", lineHeight: "1.6", fontSize: "0.95rem" }} dangerouslySetInnerHTML={{ __html: formattedBriefing }} />
+                            ) : aiBriefing && typeof aiBriefing === 'object' ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                                    <p style={{ margin: 0, color: "var(--color-text-primary)", lineHeight: "1.6", fontSize: "0.95rem" }}>
+                                        {aiBriefing.executive_summary}
+                                    </p>
+
+                                    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontSize: "0.85rem" }}>
+                                        <div style={{ background: "rgba(0,0,0,0.3)", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--color-border)" }}>
+                                            <span style={{ color: "var(--color-text-muted)", marginRight: "0.5rem" }}>Threat Level:</span>
+                                            <strong style={{ color: aiBriefing.overall_threat_score > 0.6 ? "#ef4444" : "var(--color-accent-cyan)" }}>
+                                                {(aiBriefing.overall_threat_score * 10).toFixed(1)} / 10
+                                            </strong>
+                                        </div>
+                                        <div style={{ background: "rgba(0,0,0,0.3)", padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--color-border)" }}>
+                                            <span style={{ color: "var(--color-text-muted)", marginRight: "0.5rem" }}>Sentiment:</span>
+                                            <strong style={{ color: aiBriefing.market_sentiment === "Bearish" ? "#ef4444" : "var(--color-accent-cyan)" }}>
+                                                {aiBriefing.market_sentiment}
+                                            </strong>
+                                        </div>
+                                    </div>
+
+                                    {aiBriefing.immediate_actions_recommended?.length > 0 && (
+                                        <div style={{ background: "rgba(34, 211, 238, 0.05)", padding: "1rem", borderRadius: "0.5rem", borderLeft: "3px solid var(--color-accent-cyan)" }}>
+                                            <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.85rem", color: "var(--color-text-primary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Recommended Actions</h4>
+                                            <ul style={{ margin: 0, paddingLeft: "1.2rem", color: "var(--color-text-secondary)", fontSize: "0.9rem", lineHeight: "1.5" }}>
+                                                {aiBriefing.immediate_actions_recommended.map((action, idx) => (
+                                                    <li key={idx} style={{ marginBottom: "0.25rem" }}>{action}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : aiBriefing && typeof aiBriefing === 'string' ? (
+                                // Fallback for error messages generated by the backend catch block
+                                <p style={{ margin: 0, color: "var(--color-text-muted)", lineHeight: "1.6", fontSize: "0.95rem" }}>{aiBriefing}</p>
                             ) : (
                                 <p style={{ margin: 0, color: "var(--color-text-muted)", lineHeight: "1.6", fontSize: "0.95rem" }}>No briefing available for this context.</p>
                             )}
@@ -924,191 +484,16 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {/* Left Column: Events Timeline */}
-                <div className="report-content-left">
-                    <div className="card">
-                        <div className="card-header">
-                            <div>
-                                <div className="card-title">Impact Timeline</div>
-                                <div className="card-subtitle">
-                                    Events that could influence YoY performance — sorted by most recent
-                                </div>
-                            </div>
-                            <span
-                                style={{
-                                    fontSize: "var(--font-size-sm)",
-                                    color: "var(--color-text-muted)",
-                                }}
-                            >
-                                {events.length} events
-                            </span>
-                        </div>
+                <EventFeed
+                    events={events}
+                    loading={loading}
+                    hasRun={hasRun}
+                    isSearchingWeb={isSearchingWeb}
+                    searchResultMsg={searchResultMsg}
+                    onEventClick={setSelectedEventId}
+                />
 
-                        {loading ? (
-                            <div className="event-list">
-                                {[1, 2, 3, 4].map((i) => (
-                                    <div
-                                        key={i}
-                                        className="skeleton"
-                                        style={{ height: 80, width: "100%" }}
-                                    />
-                                ))}
-                            </div>
-                        ) : !hasRun ? (
-                            <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
-                                <div className="empty-icon" style={{ fontSize: "3rem", marginBottom: "1rem" }}>👋</div>
-                                <h3>Ready to analyze</h3>
-                                <p style={{ color: "var(--color-text-muted)" }}>
-                                    Select your parameters and click &quot;Run Report&quot; to gather insights.
-                                </p>
-                            </div>
-                        ) : isSearchingWeb && events.length === 0 ? (
-                            <div className="empty-state" style={{ padding: "4rem", textAlign: "center" }}>
-                                <div className="spinner" style={{ fontSize: "2rem", animation: "spin 2s linear infinite" }}>🤖</div>
-                                <h3>Scanning Live Web...</h3>
-                                <p style={{ color: "var(--color-accent-amber)" }}>
-                                    Firing AI agents to analyze current web events. This may take 10-20 seconds.
-                                </p>
-                            </div>
-                        ) : events.length === 0 ? (
-                            <div className="empty-state">
-                                <div className="empty-icon">🔍</div>
-                                <h3>No events found</h3>
-                                <p>No local or live web data found for this date range and market.</p>
-                            </div>
-                        ) : (
-                            <div className="event-list" style={{ position: "relative" }}>
-                                {isSearchingWeb && (
-                                    <div style={{
-                                        padding: "1rem",
-                                        borderRadius: "var(--radius-lg)",
-                                        background: "rgba(56, 189, 248, 0.08)",
-                                        border: "1px solid rgba(56, 189, 248, 0.2)",
-                                        color: "var(--color-accent-cyan)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "0.75rem",
-                                        fontSize: "0.875rem",
-                                        marginBottom: "1rem"
-                                    }}>
-                                        <span className="spinner" style={{ animation: "spin 2s linear infinite" }}>🤖</span>
-                                        <strong>Combining live web events with local weather...</strong>
-                                        <span style={{ marginLeft: "auto", opacity: 0.7 }}>Checking news & promos</span>
-                                    </div>
-                                )}
-                                {searchResultMsg && (
-                                    <div style={{
-                                        padding: "1rem",
-                                        borderRadius: "var(--radius-lg)",
-                                        background: "rgba(167, 139, 250, 0.08)",
-                                        border: "1px solid rgba(167, 139, 250, 0.2)",
-                                        color: "var(--color-accent-purple)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "0.75rem",
-                                        fontSize: "0.875rem",
-                                        marginBottom: "1rem",
-                                        animation: "fadeIn 0.3s ease-out"
-                                    }}>
-                                        <span style={{ fontSize: "1.2rem" }}>ℹ️</span>
-                                        <strong>{searchResultMsg}</strong>
-                                    </div>
-                                )}
-                                {events.map((event) => (
-                                    <EventItem
-                                        key={event.id}
-                                        event={event}
-                                        onClick={() => setSelectedEventId(event.id)}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Column: Stats & Charts */}
-                <div className="report-content-right">
-                    {/* Stat Cards */}
-                    <div className="stats-grid">
-                        <StatCard icon="📊" value={totalEvents} label="Total Events" color="var(--color-accent-cyan)" />
-                        <StatCard icon="🔴" value={highSeverityCount} label="High Impact" color="var(--color-accent-rose)" />
-                        <StatCard icon="📈" value={avgSeverity} label="Avg Impact" color="var(--color-accent-amber)" />
-                        <StatCard icon="📂" value={categoryCount} label="Categories" color="var(--color-accent-emerald)" />
-                    </div>
-
-                    {/* Event Velocity Trend */}
-                    <div className="card">
-                        <div className="card-header">
-                            <div>
-                                <div className="card-title">Event Velocity</div>
-                                <div className="card-subtitle">
-                                    Volume of events over the selected period
-                                </div>
-                            </div>
-                        </div>
-                        <div className="chart-container" style={{ height: "200px" }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={trendData}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
-                                    <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                                    <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} />
-                                    <Line type="monotone" dataKey="count" stroke="var(--color-accent-indigo)" strokeWidth={3} dot={{ r: 4, fill: "var(--color-bg-card)", strokeWidth: 2, stroke: "var(--color-accent-indigo)" }} activeDot={{ r: 6 }} name="Event Count" />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Category Distribution Chart */}
-                    <div className="card">
-                        <div className="card-header">
-                            <div>
-                                <div className="card-title">Impact by Category</div>
-                                <div className="card-subtitle">
-                                    Average impact score per event type
-                                </div>
-                            </div>
-                        </div>
-                        <div className="chart-container">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={barData} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                                    <XAxis type="number" domain={[0, 100]} tick={{ fill: "#94a3b8", fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
-                                    <YAxis type="category" dataKey="category" width={130} tick={{ fill: "#94a3b8", fontSize: 12 }} />
-                                    <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} formatter={(value) => [`${value}%`, "Avg Impact"]} />
-                                    <Bar dataKey="severity" radius={[0, 6, 6, 0]} maxBarSize={28}>
-                                        {barData.map((entry, idx) => (
-                                            <Cell key={idx} fill={entry.fill} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Category Pie Chart */}
-                    <div className="card">
-                        <div className="card-header">
-                            <div>
-                                <div className="card-title">Event Distribution</div>
-                                <div className="card-subtitle">By impact category</div>
-                            </div>
-                        </div>
-                        <div className="chart-container">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="value" stroke="none">
-                                        {pieData.map((entry, idx) => (
-                                            <Cell key={idx} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} />
-                                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                </div>
+                <MetricCharts stats={stats} events={events} />
             </div>
 
             {selectedEventId && (

@@ -135,7 +135,11 @@ class ImpactEvent(Base):
         comment="Industry vertical key from the industry registry",
     )
 
-    # --- Audit Trail ---
+    # --- Audit Trail & Extracted Entities ---
+    competitor_actions: Mapped[list[dict] | None] = mapped_column(
+        JSONB, nullable=True,
+        comment="Extracted CompetitorAction structured entities arrays",
+    )
     raw_payload: Mapped[dict | None] = mapped_column(
         JSONB, nullable=True,
         comment="Complete source data preserved for audit and debugging",

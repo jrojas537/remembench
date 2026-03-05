@@ -11,6 +11,16 @@ def adapter():
         mock_settings.exa_api_key = "test_exa"
         return WebSearchAdapter()
 
+@pytest.fixture(autouse=True)
+def mock_redis():
+    with patch('app.cache.get_redis') as mock_get_redis:
+        mock_rd = AsyncMock()
+        mock_rd.get.return_value = None
+        async def _mock_pool():
+            yield mock_rd
+        mock_get_redis.return_value = _mock_pool()
+        yield mock_rd
+
 @pytest.mark.anyio
 async def test_web_search_tavily_success(adapter):
     """Test standard flow where Tavily yields structured output."""
@@ -51,24 +61,28 @@ async def test_web_search_tavily_fails_fallback_duckduckgo(adapter):
     adapter.exa_client = None 
 
     # DDG succeeds
-    mock_ddg = AsyncMock()
-    mock_ddg.text.return_value = [
+    mock_ddg = MagicMock()
+    mock_ddg.return_value.text.return_value = [
          {
              "title": "Pizza delivery halted",
              "body": "No deliveries today.",
              "href": "http://ddg.test/1"
          }
     ]
-    adapter.ddgs = mock_ddg
-    
-    events = await adapter.fetch_events(
-        start_date=datetime(2026, 2, 10),
-        end_date=datetime(2026, 2, 15),
-        industry="pizza_full_service",
-        geo_label="Detroit"
-    )
-    
+    with patch('app.adapters.web_search._DDGS', new=mock_ddg):
+        adapter.has_ddgs = True
+        
+        events = await adapter.fetch_events(
+            start_date=datetime(2026, 2, 10),
+            end_date=datetime(2026, 2, 15),
+            industry="pizza_full_service",
+            geo_label="Detroit"
+        )
+        
     assert len(events) == 1
     assert events[0].source == "web_search_duckduckgo"
     mock_tavily.search.assert_called_once()
-    mock_ddg.text.assert_called_once()
+    mock_ddg.return_value.text.assert_called_once()
+    assert events[0].source == "web_search_duckduckgo"
+    mock_tavily.search.assert_called_once()
+    mock_ddg.return_value.text.assert_called_once()

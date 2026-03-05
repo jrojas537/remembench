@@ -5,8 +5,9 @@ from mcp.server.fastmcp import FastMCP
 
 from httpx import ASGITransport, AsyncClient
 
-from app.main import app
 from app.models import ImpactEvent
+from app.database import get_db
+from app.main import app
 
 @pytest.mark.anyio
 async def test_agent_anomalies_low_detail(mock_db):
@@ -30,6 +31,15 @@ async def test_agent_anomalies_low_detail(mock_db):
     )
     mock_db.add(event)
     await mock_db.commit()
+
+    from unittest.mock import MagicMock
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = [event]
+    mock_db.execute.return_value = mock_result
+
+    async def override_get_db():
+        yield mock_db
+    app.dependency_overrides[get_db] = override_get_db
 
     # Query the Agent API
     transport = ASGITransport(app=app)
@@ -56,6 +66,8 @@ async def test_agent_anomalies_low_detail(mock_db):
     assert "* [2026-02-14] (Weather: 0.85) Major Snowstorm" in summary_line
     # Crucially, assert the massive description and DB metadata is MISSING
     assert "A massive snowstorm hit the city shutting down localized delivery." not in summary_line
+    
+    app.dependency_overrides.clear()
 
 @pytest.mark.anyio
 async def test_agent_anomalies_high_detail(mock_db):
@@ -78,6 +90,15 @@ async def test_agent_anomalies_high_detail(mock_db):
     )
     mock_db.add(event)
     await mock_db.commit()
+
+    from unittest.mock import MagicMock
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = [event]
+    mock_db.execute.return_value = mock_result
+
+    async def override_get_db():
+        yield mock_db
+    app.dependency_overrides[get_db] = override_get_db
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -103,3 +124,5 @@ async def test_agent_anomalies_high_detail(mock_db):
     # Assert relevant details present
     assert event_payload["title"] == "Presidents Day"
     assert event_payload["severity"] == 0.5
+    
+    app.dependency_overrides.clear()

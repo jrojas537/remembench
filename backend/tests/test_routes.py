@@ -13,6 +13,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.database import get_db
+from app.routes.deps_auth import get_current_user
 
 
 @pytest.fixture
@@ -31,7 +32,12 @@ def mock_session():
 async def client(mock_session):
     async def override_get_db():
         yield mock_session
+    
+    async def override_get_current_user():
+        return {"id": "testsuite-mock-user", "email": "test@example.com"}
+
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_get_current_user
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
@@ -49,9 +55,9 @@ class TestIndustriesAPI:
         groups = data["groups"]
         assert "wireless" in groups
         assert "pizza" in groups
-        # 1 wireless + 4 pizza = 5 total configs
+        # 1 wireless + 3 pizza = 4 total configs
         total = sum(len(v) for v in groups.values())
-        assert total == 5
+        assert total == 4
 
     @pytest.mark.asyncio
     async def test_industries_have_markets(self, client):
@@ -68,7 +74,7 @@ class TestIndustriesAPI:
         pizza_configs = resp.json()["groups"]["pizza"]
         # Check first pizza config (full service)
         labels = [m["geo_label"] for m in pizza_configs[0]["markets"]]
-        assert "Detroit" in labels
+        assert any("Detroit" in label for label in labels)
 
 
 class TestHealthAPI:

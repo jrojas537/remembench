@@ -12,8 +12,9 @@ from app.config import settings
 engine = create_async_engine(
     settings.database_url,
     echo=settings.debug,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=30,          # Boosted from 10 to support concurrent deep scraper tests natively
+    max_overflow=50,       # Boosted from 20 to handle burst ingestion
+    pool_timeout=60.0,     # Give the queue longer to find a connection before throwing Errno 61
     pool_pre_ping=True,
 )
 
