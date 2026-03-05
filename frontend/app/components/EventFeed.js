@@ -75,19 +75,23 @@ export default function EventFeed({ events, loading, hasRun, isSearchingWeb, sea
                             </div>
                         )}
                         {searchResultMsg && (
-                            <div style={{
-                                padding: "1rem",
-                                borderRadius: "var(--radius-lg)",
-                                background: "rgba(167, 139, 250, 0.08)",
-                                border: "1px solid rgba(167, 139, 250, 0.2)",
-                                color: "var(--color-accent-purple)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.75rem",
-                                fontSize: "0.875rem",
-                                marginBottom: "1rem",
-                                animation: "fadeIn 0.3s ease-out"
-                            }}>
+                            <div className="event-item" style={{
+                                display: "flex", alignItems: "flex-start", gap: "1rem", padding: "1.25rem",
+                                borderRadius: "8px", background: "var(--color-bg-primary)", /* Solid nest instead of glass */
+                                border: "1px solid var(--color-border)", transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                                cursor: "pointer", boxShadow: "var(--shadow-sm)"
+                            }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateX(4px)';
+                                    e.currentTarget.style.borderColor = 'var(--color-border-active)';
+                                    e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'none';
+                                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                                }}
+                            >
                                 <span style={{ fontSize: "1.2rem" }}>ℹ️</span>
                                 <strong>{searchResultMsg}</strong>
                             </div>
