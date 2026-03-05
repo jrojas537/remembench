@@ -240,7 +240,7 @@ export default function Dashboard() {
             {/* Auth Meta Bar */}
             <div style={{
                 display: "flex", justifyContent: "flex-end", padding: "0.5rem 1.5rem",
-                borderBottom: "1px solid var(--border-color)", background: "var(--background-paper)",
+                borderBottom: "1px solid var(--color-border)", background: "var(--color-bg-primary)",
                 fontSize: "0.875rem", gap: "1rem", alignItems: "center"
             }}>
                 {user ? (
@@ -289,6 +289,7 @@ export default function Dashboard() {
                         id="industry-filter"
                         value={industry}
                         onChange={(e) => handleIndustryChange(e.target.value)}
+                        style={{ padding: "0.5rem", borderRadius: "8px", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
                     >
                         {Object.entries(
                             Object.entries(activeIndustries).reduce((acc, [key, data]) => {
@@ -316,6 +317,7 @@ export default function Dashboard() {
                         id="geo-filter"
                         value={geoFilter}
                         onChange={(e) => setGeoFilter(e.target.value)}
+                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
                     >
                         <option value="">All Markets</option>
                         {industryConfig.markets.map((m) => {
@@ -332,6 +334,7 @@ export default function Dashboard() {
                         id="category-filter"
                         value={categoryFilter}
                         onChange={(e) => setCategoryFilter(e.target.value)}
+                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
                     >
                         <option value="">All Categories</option>
                         {industryConfig.categories.map((cat) => (
@@ -349,7 +352,7 @@ export default function Dashboard() {
                         id="start-date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--border-color)", background: "var(--background-paper)", color: "var(--color-text-primary)" }}
+                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
                     />
                 </div>
                 <div className="control-group">
@@ -359,7 +362,7 @@ export default function Dashboard() {
                         id="end-date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--border-color)", background: "var(--background-paper)", color: "var(--color-text-primary)" }}
+                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
                     />
                 </div>
 
@@ -377,27 +380,26 @@ export default function Dashboard() {
                     style={{ alignSelf: "flex-end", marginLeft: "auto", flexDirection: "row", gap: "0.5rem" }}
                 >
                     <button
-                        className="btn"
+                        className="secondary-button"
                         onClick={handleSaveView}
-                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "var(--color-bg-glass)", color: "var(--color-accent-indigo)", cursor: "pointer", fontWeight: "600", transition: "background 0.2s" }}
                         title="Save this view to your profile"
                     >
                         🔖 Save View
                     </button>
                     <button
-                        className="btn"
+                        className="secondary-button"
                         onClick={handleExportCSV}
                         disabled={loading || isSearchingWeb || events.length === 0}
-                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "var(--color-bg-glass)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
+                        style={{ cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
                         title="Download Data as CSV"
                     >
                         ⬇️ CSV
                     </button>
                     <button
-                        className="btn"
+                        className="secondary-button"
                         onClick={handlePrintPDF}
                         disabled={loading || isSearchingWeb || events.length === 0}
-                        style={{ padding: "0.5rem 1rem", borderRadius: "8px", border: "1px solid var(--color-border)", background: "var(--color-bg-glass)", color: "var(--color-text-primary)", cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
+                        style={{ cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
                         title="Print Dashboard to PDF"
                     >
                         📄 PDF
@@ -419,10 +421,9 @@ export default function Dashboard() {
                     <div style={{
                         gridColumn: "1 / -1",
                         background: "var(--color-bg-card)",
-                        backdropFilter: "blur(16px)",
                         border: "1px solid var(--color-border)",
                         boxShadow: "var(--shadow-md)",
-                        borderRadius: "1rem",
+                        borderRadius: "12px",
                         padding: "1.5rem",
                         display: "flex",
                         gap: "1rem",

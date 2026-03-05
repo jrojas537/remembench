@@ -106,7 +106,17 @@ export default function MetricCharts({ stats, events }) {
             </div>
 
             {/* Category Distribution Chart */}
-            <div className="card">
+            <div className="card" style={{
+                background: "var(--color-bg-card)",
+                borderRadius: "12px",
+                padding: "1.5rem",
+                boxShadow: "var(--shadow-sm)",
+                border: "1px solid var(--color-border)",
+                height: "auto", // 'height' variable is not defined, using 'auto' or a specific value
+                display: "flex",
+                flexDirection: "column",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
+            }}>
                 <div className="card-header">
                     <div>
                         <div className="card-title">Impact by Category</div>
@@ -133,7 +143,17 @@ export default function MetricCharts({ stats, events }) {
             </div>
 
             {/* Category Pie Chart */}
-            <div className="card">
+            <div className="card" style={{
+                background: "var(--color-bg-card)",
+                borderRadius: "12px",
+                padding: "1.5rem",
+                boxShadow: "var(--shadow-sm)",
+                border: "1px solid var(--color-border)",
+                height: "auto", // 'height' variable is not defined, using 'auto' or a specific value
+                display: "flex",
+                flexDirection: "column",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
+            }}>
                 <div className="card-header">
                     <div>
                         <div className="card-title">Event Distribution</div>
