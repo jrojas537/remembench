@@ -10,28 +10,38 @@
  *  CSS Custom Properties (Design Tokens)                                     *
  * -------------------------------------------------------------------------- */
 :root {
-  /* Color Palette — Deep navy with electric accents */
-  --color-bg-primary: #060a14;
-  --color-bg-secondary: #0d1321;
-  --color-bg-card: rgba(13, 19, 33, 0.75);
-  --color-bg-card-hover: rgba(22, 33, 56, 0.85);
-  --color-bg-glass: rgba(255, 255, 255, 0.035);
-  --color-bg-glass-hover: rgba(255, 255, 255, 0.07);
+  /* Color Palette — Deep Navy, Light Blue, White, and Orange accents */
+  --color-bg-primary: #003366;
+  /* Deep Navy */
+  --color-bg-secondary: #002244;
+  /* Darker Navy offset */
+  --color-bg-card: rgba(0, 34, 68, 0.75);
+  --color-bg-card-hover: rgba(0, 51, 102, 0.85);
+  --color-bg-glass: rgba(255, 255, 255, 0.05);
+  --color-bg-glass-hover: rgba(255, 255, 255, 0.1);
 
-  --color-border: rgba(255, 255, 255, 0.06);
-  --color-border-active: rgba(99, 102, 241, 0.5);
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-active: rgba(102, 153, 204, 0.5);
+  /* Light Blue border */
 
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+  --color-text-primary: #ffffff;
+  /* White */
+  --color-text-secondary: #e0e0e0;
+  --color-text-muted: #a0a0a0;
 
   /* Accent Colors */
-  --color-accent-indigo: #818cf8;
-  --color-accent-cyan: #22d3ee;
+  --color-accent-indigo: #6699CC;
+  /* Light Blue replaces indigo defaults */
+  --color-accent-cyan: #6699CC;
+  /* Light Blue */
   --color-accent-emerald: #34d399;
-  --color-accent-amber: #fbbf24;
-  --color-accent-rose: #fb7185;
-  --color-accent-violet: #a78bfa;
+  /* Maintain standard semantic success */
+  --color-accent-amber: #FF9933;
+  /* Orange action / warning */
+  --color-accent-rose: #f87171;
+  /* Maintain error red */
+  --color-accent-violet: #FF9933;
+  /* Orange secondary action */
 
   /* Category Colors */
   --color-weather: #38bdf8;
@@ -297,7 +307,7 @@ a:hover {
 .app-header h1 {
   font-size: var(--font-size-xl);
   font-weight: 700;
-  background: linear-gradient(135deg, #818cf8 0%, #22d3ee 50%, #818cf8 100%);
+  background: linear-gradient(135deg, #6699CC 0%, #FF9933 50%, #6699CC 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
