@@ -48,8 +48,8 @@ export const FALLBACK_INDUSTRIES = {
         icon: "🚗",
         group: "car_wash",
         markets: [
-            "National", "Los Angeles", "Chicago", "Houston", "Phoenix",
-            "Detroit Metro", "Dallas", "Miami",
+            "Detroit Metro", "Dearborn", "Warren", "Ann Arbor", "Royal Oak",
+            "Ferndale", "Livonia", "Sterling Heights", "Farmington Hills", "Troy"
         ],
         categories: [
             "weather", "competitor_promo", "holiday", "news",

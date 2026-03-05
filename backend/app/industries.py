@@ -59,14 +59,16 @@ class IndustryConfig:
 # ---------------------------------------------------------------------------
 
 CAR_WASH_MARKETS = [
-    Market("National", 39.8283, -98.5795), # Center of USA for general news
-    Market("Los Angeles", 34.0522, -118.2437),
-    Market("Chicago", 41.8781, -87.6298),
-    Market("Houston", 29.7604, -95.3698),
-    Market("Phoenix", 33.4484, -112.0740),
     Market("Detroit Metro", 42.3314, -83.0458),
-    Market("Dallas", 32.7767, -96.7970),
-    Market("Miami", 29.7604, -95.3698),
+    Market("Dearborn", 42.3223, -83.1763),
+    Market("Warren", 42.4775, -83.0277),
+    Market("Ann Arbor", 42.2808, -83.7430),
+    Market("Royal Oak", 42.4895, -83.1446),
+    Market("Ferndale", 42.4606, -83.1346),
+    Market("Livonia", 42.3684, -83.3527),
+    Market("Sterling Heights", 42.5803, -83.0302),
+    Market("Farmington Hills", 42.4853, -83.3771),
+    Market("Troy", 42.6064, -83.1498),
 ]
 
 # Detroit metro area + key Michigan cities for pizza analysis
