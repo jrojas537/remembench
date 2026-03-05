@@ -12,7 +12,7 @@ export const metadata = {
 };
 export default function RootLayout({ children }) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
             <body className={`${inter.variable} font-sans antialiased bg-bg-primary text-text-primary`}>
                 <AuthProvider>
                     <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
