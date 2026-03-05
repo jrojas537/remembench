@@ -62,7 +62,7 @@ class WebSearchAdapter(BaseAdapter):
         Attempts to fetch news surrounding a specific market/industry over a date range.
         Implementing BaseAdapter contract.
         """
-        limit = 5
+        limit = 15
         market = geo_label if geo_label else "Unknown"
         start_str = start_date.strftime("%Y-%m-%d")
         end_str = end_date.strftime("%Y-%m-%d")
