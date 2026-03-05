@@ -7,13 +7,14 @@ class BaseLLMClient(ABC):
     """
 
     @abstractmethod
-    async def complete(self, system: str, user: str) -> str:
+    async def complete(self, system: str, user: str, json_mode: bool = False) -> str:
         """
         Generate a text completion given a system prompt and a user prompt.
         
         Args:
             system: The system instruction guiding the model's behavior.
             user: The input text to process.
+            json_mode: If true, forces the provider to return raw JSON.
             
         Returns:
             The model's text response.

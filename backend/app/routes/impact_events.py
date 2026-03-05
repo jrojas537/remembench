@@ -23,6 +23,7 @@ from app.logging import get_logger
 from app.models import ImpactEvent
 from app.schemas import ImpactEventCreate, ImpactEventResponse, AIBriefingRequest, AIBriefingResponse
 from app.auth import require_api_key
+from app.routes.deps_auth import get_current_user
 
 logger = get_logger("routes.events")
 
@@ -79,7 +80,7 @@ async def create_event(
     return db_event
 
 
-@router.get("/", response_model=list[ImpactEventResponse], dependencies=[Depends(require_api_key)])
+@router.get("/", response_model=list[ImpactEventResponse], dependencies=[Depends(get_current_user)])
 async def list_events(
     category: str | None = Query(None, description="Filter by impact category"),
     source: str | None = Query(None, description="Filter by data source"),
@@ -122,7 +123,7 @@ async def list_events(
 
 
 # NOTE: /stats/summary must come BEFORE /{event_id} — see module docstring.
-@router.get("/stats/summary", dependencies=[Depends(require_api_key)])
+@router.get("/stats/summary", dependencies=[Depends(get_current_user)])
 async def event_stats(
     industry: str = Query("wireless_retail", description="Industry vertical"),
     start_date: datetime | None = Query(None, description="Filter events on or after this date"),
@@ -169,7 +170,7 @@ async def event_stats(
         },
     }
 
-@router.post("/briefing", response_model=AIBriefingResponse, dependencies=[Depends(require_api_key)])
+@router.post("/briefing", response_model=AIBriefingResponse, dependencies=[Depends(get_current_user)])
 async def get_executive_briefing(request: AIBriefingRequest) -> dict:
     """
     Generate an AI Executive Briefing from a list of events.
@@ -180,7 +181,7 @@ async def get_executive_briefing(request: AIBriefingRequest) -> dict:
     briefing_text = await classifier.generate_executive_briefing(request.events, request.industry)
     return {"briefing": briefing_text}
 
-@router.get("/{event_id}", response_model=ImpactEventResponse, dependencies=[Depends(require_api_key)])
+@router.get("/{event_id}", response_model=ImpactEventResponse, dependencies=[Depends(get_current_user)])
 async def get_event(
     event_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),

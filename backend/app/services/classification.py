@@ -39,15 +39,18 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
 """
 
         try:
-            response_text = await self.llm.complete(system=system_prompt, user=text)
+            response_text = await self.llm.complete(system=system_prompt, user=text, json_mode=True)
             
-            # Use regex to robustly extract the first JSON block amidst conversational hallucination
-            match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if not match:
-                raise ValueError("No JSON object found in LLM response")
+            # Clean potential markdown wrapping (e.g. from Anthropic)
+            cleaned_text = response_text.strip()
+            if cleaned_text.startswith("```json"):
+                cleaned_text = cleaned_text[7:]
+            if cleaned_text.startswith("```"):
+                cleaned_text = cleaned_text[3:]
+            if cleaned_text.endswith("```"):
+                cleaned_text = cleaned_text[:-3]
             
-            cleaned_text = match.group(0)
-            return json.loads(cleaned_text)
+            return json.loads(cleaned_text.strip())
             
         except Exception as e:
             logger.error("llm_classification_failed", error=str(e), text_snippet=text[:100])
@@ -93,15 +96,18 @@ Each object in the array must match this schema:
 """
 
         try:
-            response_text = await self.llm.complete(system=system_prompt, user=payload)
+            response_text = await self.llm.complete(system=system_prompt, user=payload, json_mode=True)
             
-            # We strictly extract JSON arrays handling LLM markdown variations
-            match = re.search(r'\[.*\]', response_text, re.DOTALL)
-            if not match:
-                raise ValueError("No JSON array bounds found in LLM response wrapper")
+            # Clean potential markdown wrapping
+            cleaned_text = response_text.strip()
+            if cleaned_text.startswith("```json"):
+                cleaned_text = cleaned_text[7:]
+            if cleaned_text.startswith("```"):
+                cleaned_text = cleaned_text[3:]
+            if cleaned_text.endswith("```"):
+                cleaned_text = cleaned_text[:-3]
             
-            cleaned_text = match.group(0)
-            results = json.loads(cleaned_text)
+            results = json.loads(cleaned_text.strip())
             
             if not isinstance(results, list) or len(results) != len(events_texts):
                  raise ValueError("LLM returned malformed list structure length mismatch.")
