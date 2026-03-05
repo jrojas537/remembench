@@ -15,17 +15,22 @@ class GeminiClient(BaseLLMClient):
             self.client = None
         self.model_name = settings.gemini_model
 
-    async def complete(self, system: str, user: str) -> str:
+    async def complete(self, system: str, user: str, json_mode: bool = False) -> str:
         if not self.client:
             raise ValueError("GEMINI_API_KEY is not set")
         
+        config_kwargs = {
+            "system_instruction": system,
+            "temperature": 0.0,
+        }
+        
+        if json_mode:
+            config_kwargs["response_mime_type"] = "application/json"
+            
         # Run asynchronously using the modern SDK
         response = await self.client.aio.models.generate_content(
             model=self.model_name,
             contents=user,
-            config=types.GenerateContentConfig(
-                system_instruction=system,
-                temperature=0.0
-            )
+            config=types.GenerateContentConfig(**config_kwargs)
         )
         return response.text

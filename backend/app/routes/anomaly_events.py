@@ -23,6 +23,7 @@ from app.logging import get_logger
 from app.models import ImpactEvent
 from app.schemas import ImpactEventCreate, ImpactEventResponse
 from app.auth import require_api_key
+from app.routes.deps_auth import get_current_user
 
 logger = get_logger("routes.events")
 
@@ -90,6 +91,7 @@ async def create_event(
     response_model=list[ImpactEventResponse],
     summary="List Impact Events",
     response_description="A list of historical impact events filtered by parameters.",
+    dependencies=[Depends(get_current_user)],
 )
 async def list_events(
     category: str | None = Query(None, description="Filter by event taxonomy category"),
@@ -135,6 +137,7 @@ async def list_events(
     "/stats/summary",
     summary="Get Anomaly Summary Statistics",
     response_description="A structured taxonomy breakdown detailing aggregate frequency and combined severity trends.",
+    dependencies=[Depends(get_current_user)],
 )
 async def anomaly_stats(
     industry: str = Query("wireless_retail", description="The target industry vertical"),
