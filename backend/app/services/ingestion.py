@@ -214,6 +214,18 @@ class IngestionService:
                             if not ev.raw_payload:
                                 ev.raw_payload = {}
                             ev.raw_payload["details"] = classification["details"]
+                            
+                # Filter out LLM rejections before they pollute the database!
+                valid_events = []
+                for ev in batch:
+                    # If it's pure 0 impact and the LLM literally declared it didn't find anything, drop it
+                    if ev.severity == 0.0 and ev.confidence == 0.0 and ("No specific event" in ev.title or ev.category == "general"):
+                        continue
+                    valid_events.append(ev)
+                
+                # Replace the batch sequence with only the validated items cleanly
+                batch.clear()
+                batch.extend(valid_events)
         
         if batches:
             await asyncio.gather(*[_process_batch(b) for b in batches])
