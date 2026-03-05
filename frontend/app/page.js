@@ -263,7 +263,7 @@ export default function Dashboard() {
                     <>
                         <span style={{ color: "var(--color-text-muted)" }}>Browsing in public mode</span>
                         <Link href="/login" style={{
-                            background: "var(--color-text-primary)", color: "var(--background-default)",
+                            background: "var(--color-text-primary)", color: "#ffffff",
                             padding: "0.25rem 0.75rem", borderRadius: "4px", textDecoration: "none",
                             fontWeight: "600"
                         }}>
