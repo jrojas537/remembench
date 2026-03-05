@@ -196,6 +196,19 @@ class IngestionService:
                         detailed_impact = details.get("detailed_impact") if isinstance(details, dict) else None
                         ev.description = detailed_impact or summary
                         
+                        # Override default search-bounds with the explicit event_date if the LLM positively identified one
+                        event_date_str = classification.get("event_date")
+                        if event_date_str and isinstance(event_date_str, str) and event_date_str.lower() != "null":
+                            import re
+                            if re.match(r"^\d{4}-\d{2}-\d{2}$", event_date_str):
+                                from datetime import timezone
+                                try:
+                                    parsed_date = datetime.strptime(event_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                                    ev.start_date = parsed_date
+                                    ev.end_date = parsed_date
+                                except ValueError:
+                                    pass
+                        
                         # Store rich details in the payload for the frontend modal
                         if "details" in classification:
                             if not ev.raw_payload:
