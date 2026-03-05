@@ -27,12 +27,12 @@ export default function RegisterPage() {
     return (
         <div style={{
             minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-            background: "var(--background-default)", padding: "1rem"
+            background: "var(--color-bg-primary)", padding: "1rem"
         }}>
             <div style={{
-                background: "var(--background-paper)", padding: "3rem", borderRadius: "16px",
-                width: "100%", maxWidth: "400px", border: "1px solid var(--border-color)",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
+                background: "var(--color-bg-card)", padding: "3rem", borderRadius: "16px",
+                width: "100%", maxWidth: "400px", border: "1px solid var(--color-border)",
+                boxShadow: "var(--shadow-lg)"
             }}>
                 <div style={{ textAlign: "center", marginBottom: "2rem" }}>
                     <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>⚡</div>
@@ -102,7 +102,7 @@ export default function RegisterPage() {
                         type="submit"
                         style={{
                             width: "100%", padding: "0.875rem", borderRadius: "8px",
-                            background: "var(--color-text-primary)", color: "var(--background-default)",
+                            background: "var(--color-accent-indigo)", color: "#FFFFFF",
                             border: "none", fontWeight: "600", cursor: "pointer", marginTop: "0.5rem",
                             transition: "opacity 0.2s"
                         }}

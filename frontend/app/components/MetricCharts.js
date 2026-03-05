@@ -95,8 +95,8 @@ export default function MetricCharts({ stats, events }) {
                 <div className="chart-container" style={{ height: "200px" }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={trendData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.2} vertical={false} />
-                            <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fill: "var(--color-text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fill: "var(--color-text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
                             <Tooltip contentStyle={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 8, color: "var(--color-text-primary)" }} />
                             <Line type="monotone" dataKey="count" stroke="var(--color-accent-indigo)" strokeWidth={3} dot={{ r: 4, fill: "var(--color-bg-card)", strokeWidth: 2, stroke: "var(--color-accent-indigo)" }} activeDot={{ r: 6 }} name="Event Count" />
