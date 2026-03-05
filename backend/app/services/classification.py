@@ -137,13 +137,19 @@ Each object in the array must match this schema:
                 "competitor_actions": []
             } for text in events_texts]
 
-    async def generate_executive_briefing(self, events: list[dict], industry: str) -> str:
+    async def generate_executive_briefing(self, events: list[dict], industry: str) -> dict:
         """
         Reads an array of event dictionaries and synthesizes a high-level strategic brief.
         Truncates list size to avoid context-window overflows on heavy historical queries.
         """
         if not events:
-            return "No events found in the current timeframe to analyze."
+            return {
+                "executive_summary": "No events found in the current timeframe to analyze.",
+                "overall_threat_score": 0.0,
+                "market_sentiment": "Stable",
+                "immediate_actions_recommended": [],
+                "key_opportunities": []
+            }
 
         # Truncate to reasonable limits to avoid token overflow
         event_texts: list[str] = []
