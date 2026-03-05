@@ -58,17 +58,15 @@ class IndustryConfig:
 #  Market Definitions
 # ---------------------------------------------------------------------------
 
-WIRELESS_MARKETS = [
-    Market("New York City", 40.7128, -74.0060),
+CAR_WASH_MARKETS = [
+    Market("National", 39.8283, -98.5795), # Center of USA for general news
     Market("Los Angeles", 34.0522, -118.2437),
     Market("Chicago", 41.8781, -87.6298),
     Market("Houston", 29.7604, -95.3698),
     Market("Phoenix", 33.4484, -112.0740),
-    Market("Philadelphia", 39.9526, -75.1652),
-    Market("San Antonio", 29.4241, -98.4936),
-    Market("San Diego", 32.7157, -117.1611),
+    Market("Detroit Metro", 42.3314, -83.0458),
     Market("Dallas", 32.7767, -96.7970),
-    Market("San Jose", 37.3382, -121.8863),
+    Market("Miami", 29.7604, -95.3698),
 ]
 
 # Detroit metro area + key Michigan cities for pizza analysis
@@ -90,9 +88,11 @@ PIZZA_MARKETS = [
 #  GDELT Query Sets
 # ---------------------------------------------------------------------------
 
-WIRELESS_GDELT_QUERIES = [
-    '"cell phone store" OR "wireless retail" (promotion OR deal OR offer)',
-    '"Verizon" OR "T-Mobile" OR "AT&T" (outage OR disruption OR offline)',
+CAR_WASH_GDELT_QUERIES = [
+    '"car wash" (promotion OR deal OR opening OR discount)',
+    '("Mister Car Wash" OR "Tommy\'s Express" OR "Zips" OR "Take 5") (acquisition OR opening OR promotion)',
+    'weather (pollen OR dust OR mud OR snow OR "saharan dust")',
+    '"water restrictions" OR "drought" OR "climate"',
 ]
 
 PIZZA_GDELT_QUERIES = [
@@ -112,21 +112,16 @@ PIZZA_GDELT_QUERIES = [
 #  RSS Feed Sets
 # ---------------------------------------------------------------------------
 
-WIRELESS_RSS_FEEDS = [
+CAR_WASH_RSS_FEEDS = [
     RSSFeed(
-        url="https://www.verizon.com/about/rss-feeds/news-releases",
-        label="Verizon News Releases",
-        source_key="verizon",
+        url="https://www.carwash.com/feed/",
+        label="Professional Carwashing & Detailing",
+        source_key="carwash_com",
     ),
     RSSFeed(
-        url="https://feed.businesswire.com/rss/home/?rss=G1QFDERJXkJeGVJaEk&_gl=1",
-        label="T-Mobile via BusinessWire",
-        source_key="tmobile",
-    ),
-    RSSFeed(
-        url="https://about.att.com/rss/press_releases.xml",
-        label="AT&T Newsroom",
-        source_key="att",
+        url="https://carwash.org/feed",
+        label="International Carwash Association",
+        source_key="ica",
     ),
 ]
 
@@ -158,7 +153,7 @@ UNIVERSAL_CATEGORIES = [
     "weather", "holiday", "news", "sports", "local_event",
 ]
 
-WIRELESS_CATEGORIES = UNIVERSAL_CATEGORIES + [
+CAR_WASH_CATEGORIES = UNIVERSAL_CATEGORIES + [
     "competitor_promo", "outage", "supply_chain", "regulatory",
 ]
 
@@ -173,25 +168,25 @@ PIZZA_CATEGORIES = UNIVERSAL_CATEGORIES + [
 # ---------------------------------------------------------------------------
 
 INDUSTRIES: dict[str, IndustryConfig] = {
-    # === WIRELESS ===
-    "wireless_retail": IndustryConfig(
-        key="wireless_retail",
-        label="Wireless Retail",
-        icon="📱",
-        description="Mobile carrier retail environments",
-        group="wireless",
-        markets=WIRELESS_MARKETS,
-        gdelt_queries=WIRELESS_GDELT_QUERIES,
-        rss_feeds=WIRELESS_RSS_FEEDS,
-        categories=WIRELESS_CATEGORIES,
+    # === CAR WASH ===
+    "car_wash": IndustryConfig(
+        key="car_wash",
+        label="Car Wash",
+        icon="🚗",
+        description="Automated and full-service car wash operations",
+        group="car_wash",
+        markets=CAR_WASH_MARKETS,
+        gdelt_queries=CAR_WASH_GDELT_QUERIES,
+        rss_feeds=CAR_WASH_RSS_FEEDS,
+        categories=CAR_WASH_CATEGORIES,
         category_labels={
-            "weather": "Weather Impact",
-            "holiday": "Holiday",
-            "news": "News / Macro Event",
+            "weather": "Weather Impact (Rain/Snow/Pollen)",
+            "holiday": "Holiday Weekend",
+            "news": "Local News / Traffic",
             "competitor_promo": "Competitor Promo",
-            "outage": "Network Outage",
-            "supply_chain": "Supply Chain Issue",
-            "regulatory": "Regulatory Change",
+            "outage": "Equipment Failure / Disruption",
+            "supply_chain": "Supply Chain (Chemicals)",
+            "regulatory": "Water Restrictions",
             "local_event": "Local Event",
             "sports": "Sports",
         },
@@ -333,12 +328,13 @@ def get_rss_feeds(industry_key: str) -> list[RSSFeed]:
 def get_web_search_query(industry_key: str, start_date: datetime, end_date: datetime) -> str:
     """Return the targeted search terms for web search adapters based on the industry and time period."""
     if industry_key.startswith("pizza"):
+        base_pizza_query = '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s Pizza") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "sporting event" OR game OR playoffs OR tournament)'
         if start_date.month == 3 or end_date.month == 3:
-            return '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "Pi Day" OR "3.14")'
-        return '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s") (promotion OR discount OR deal OR coupon OR BOGO OR offer)'
-    
-    if industry_key.startswith("wireless"):
-        return '("cell phone" OR "wireless store" OR "T-Mobile" OR Verizon OR "AT&T") (promotion OR "new iPhone" OR "device launch" OR "network outage" OR "5g rollout" OR "switch deal" OR "trade-in offer")'
+            return f'{base_pizza_query} OR ("Pi Day" OR "3.14")'
+        return base_pizza_query
+        
+    if industry_key.startswith("car_wash"):
+        return '("car wash" OR "auto wash" OR "Mister Car Wash" OR "Tommy\'s Express" OR "Zips") (promotion OR discount OR opening OR "free wash" OR weather OR "pollen" OR "dust")'
     
     # Generic fallback
     label = get_industry(industry_key).label
