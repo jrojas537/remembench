@@ -13,6 +13,7 @@ API:  https://www.ncei.noaa.gov/access/services/data/v1
 """
 
 from datetime import datetime
+from typing import Any
 
 from app.adapters.base import BaseAdapter
 from app.config import settings
