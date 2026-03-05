@@ -64,21 +64,33 @@ task_logger = get_task_logger(__name__)
 #  Async Runner
 # ---------------------------------------------------------------------------
 
-def _run_async(coro):
+def _run_async(coro_func, *args, **kwargs):
     """
-    Run an async coroutine from a synchronous Celery task.
+    Run an async coroutine function from a synchronous Celery task securely.
 
     Uses asyncio.run() for proper cleanup (Python 3.11+). Falls back
-    to manual event loop creation if called within an existing loop.
+    to manual event loop creation if called within an existing thread loop context
+    preventing double-exhaustion of coroutine objects.
     """
     try:
-        return asyncio.run(coro)
+        # Throws RuntimeError if no running loop
+        asyncio.get_running_loop()
+        has_loop = True
     except RuntimeError:
+        has_loop = False
+
+    if has_loop:
+        # If the thread already has a loop, we must create a new one natively
+        # or nest it via tools like nest_asyncio if strictly required. 
+        # For typical Celery prefork contexts, creating a new un-attached loop works:
         loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         try:
-            return loop.run_until_complete(coro)
+            return loop.run_until_complete(coro_func(*args, **kwargs))
         finally:
             loop.close()
+    else:
+        return asyncio.run(coro_func(*args, **kwargs))
 
 
 # ---------------------------------------------------------------------------
@@ -131,7 +143,7 @@ def run_nightly_ingestion(self):
         return results
 
     try:
-        return _run_async(_ingest())
+        return _run_async(_ingest)
     except Exception as exc:
         task_logger.error("nightly_ingestion_failed", exc_info=True)
         raise self.retry(exc=exc)
@@ -185,7 +197,7 @@ def run_weekly_deep_sync(self):
         return results
 
     try:
-        return _run_async(_ingest())
+        return _run_async(_ingest)
     except Exception as exc:
         task_logger.error("weekly_deep_sync_failed", exc_info=True)
         raise self.retry(exc=exc)
@@ -251,7 +263,7 @@ def run_historical_backfill(
                 raise
         return results
 
-    return _run_async(_ingest())
+    return _run_async(_ingest)
 
 
 # ---------------------------------------------------------------------------
@@ -299,4 +311,4 @@ def run_live_ingestion(
                 await db.rollback()
                 raise
 
-    return _run_async(_ingest())
+    return _run_async(_ingest)
