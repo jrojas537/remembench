@@ -16,7 +16,8 @@ logger = get_logger("cache")
 redis_pool = redis.ConnectionPool.from_url(
     settings.redis_url, 
     decode_responses=True,
-    max_connections=10
+    max_connections=50,
+    socket_timeout=5.0
 )
 
 async def get_redis() -> AsyncGenerator[redis.Redis, None]:

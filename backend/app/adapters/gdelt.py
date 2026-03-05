@@ -18,6 +18,8 @@ Docs: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
 
 import hashlib
 from datetime import datetime
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+import asyncio
 
 from app.adapters.base import BaseAdapter
 from app.industries import get_gdelt_queries
@@ -81,6 +83,11 @@ class GdeltAdapter(BaseAdapter):
         )
         return deduped
 
+    @retry(
+        wait=wait_exponential(multiplier=1.5, min=2, max=15),
+        stop=stop_after_attempt(4),
+        retry=retry_if_exception_type(Exception)
+    )
     async def _search_gdelt(
         self,
         query: str,

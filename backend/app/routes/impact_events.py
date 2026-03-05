@@ -173,13 +173,13 @@ async def event_stats(
 @router.post("/briefing", response_model=AIBriefingResponse, dependencies=[Depends(get_current_user)])
 async def get_executive_briefing(request: AIBriefingRequest) -> dict:
     """
-    Generate an AI Executive Briefing from a list of events.
+    Generate an AI Executive Briefing from a list of events natively structured in JSON.
     """
     from app.services.classification import ClassificationService
     classifier = ClassificationService()
     
-    briefing_text = await classifier.generate_executive_briefing(request.events, request.industry)
-    return {"briefing": briefing_text}
+    briefing_payload = await classifier.generate_executive_briefing(request.events, request.industry)
+    return {"briefing": briefing_payload}
 
 @router.get("/{event_id}", response_model=ImpactEventResponse, dependencies=[Depends(get_current_user)])
 async def get_event(

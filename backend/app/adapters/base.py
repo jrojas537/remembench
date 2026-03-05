@@ -35,27 +35,25 @@ class BaseAdapter(ABC):
     def __init__(self, name: str) -> None:
         self.name = name
         self.logger = get_logger(f"adapter.{name}")
-        # Lazily initialized — avoids creating a TCP pool until first use
-        self._client: httpx.AsyncClient | None = None
         self.requires_llm_classification: bool = False
 
-    async def _get_client(self, timeout: float = 30.0) -> httpx.AsyncClient:
-        """Get or create a reusable async HTTP client with connection pooling."""
-        if self._client is None or self._client.is_closed:
-            self._client = httpx.AsyncClient(
-                timeout=timeout,
-                limits=httpx.Limits(
-                    max_connections=20,
-                    max_keepalive_connections=5,
-                ),
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Get the global reusable async HTTP client tied to the FastAPI application state."""
+        from app.main import app
+        
+        # In testing contexts or isolated chron boundaries, app.state might not be booted.
+        # Fallback to a local client if the global one doesn't exist on state.
+        if not hasattr(app.state, "http_client"):
+            app.state.http_client = httpx.AsyncClient(
+                limits=httpx.Limits(max_connections=50, max_keepalive_connections=15),
+                timeout=httpx.Timeout(30.0, read=60.0)
             )
-        return self._client
+            
+        return app.state.http_client
 
     async def close(self) -> None:
-        """Close the HTTP client — call during application shutdown."""
-        if self._client and not self._client.is_closed:
-            await self._client.aclose()
-            self._client = None
+        """The client is managed globally; no local cleanup required natively."""
+        pass
 
     @abstractmethod
     async def fetch_events(
@@ -105,8 +103,10 @@ class BaseAdapter(ABC):
         on timeouts and 5xx errors. Other errors propagate immediately.
         """
         self.logger.debug("http_request", url=url, params=params)
-        client = await self._get_client(timeout)
-        response = await client.get(url, params=params, headers=headers)
+        client = await self._get_client()
+        
+        # Override the global timeout uniquely for this particular request
+        response = await client.get(url, params=params, headers=headers, timeout=timeout)
         response.raise_for_status()
 
         content_type = response.headers.get("content-type", "")

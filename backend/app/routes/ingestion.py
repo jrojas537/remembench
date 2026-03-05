@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import require_api_key
+from app.routes.deps_auth import get_current_user
 from app.database import get_db
 from app.logging import get_logger
 from app.services import IngestionService
@@ -29,7 +30,7 @@ router = APIRouter()
     "/run",
     summary="Trigger Manual Ingestion",
     response_description="A statistical dictionary block confirming database inserts and fetched source volume.",
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(get_current_user)],
 )
 async def run_ingestion(
     start_date: datetime = Query(..., description="Start of bounding time-series to ingest"),
@@ -38,7 +39,7 @@ async def run_ingestion(
     latitude: float | None = Query(None, ge=-90.0, le=90.0, description="Spatial core bounding reference"),
     longitude: float | None = Query(None, ge=-180.0, le=180.0, description="Spatial core bounding reference"),
     geo_label: str | None = Query(None, description="Human readable market name"),
-    db: AsyncSession = Depends(get_db),
+    # db: AsyncSession = Depends(get_db), # db session deferred to backend worker
 ) -> dict[str, Any]:
     """
     Manually triggers the overarching intelligence ingestion pipeline for a date range.
@@ -88,39 +89,53 @@ async def run_ingestion(
     except Exception as e:
         logger.warning("redis_cache_check_failed", error=str(e))
 
-    service = IngestionService()
-    result: dict[str, Any] = await service.ingest(
-        db=db,
-        start_date=start_date,
-        end_date=end_date,
-        industry=industry,
-        latitude=latitude,
-        longitude=longitude,
-        geo_label=geo_label,
+    # Dispatch explicitly to the Celery worker for headless processing
+    from app.tasks import run_live_ingestion
+
+    task = run_live_ingestion.delay(
+        start_date.isoformat(),
+        end_date.isoformat(),
+        industry,
+        latitude,
+        longitude,
+        geo_label,
     )
     
-    # Store successful run in cache
-    try:
-        # Calculate dynamic cache expiration based on how old the data is
-        today = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    logger.info("dispatched_live_ingestion", task_id=str(task.id), industry=industry)
         
-        # Strip tzinfo for naive comparison if needed
-        end_dt_naive = end_date.replace(tzinfo=None)
-        days_ago = (today - end_dt_naive).days
+    return {
+        "status": "queued",
+        "task_id": str(task.id),
+        "industry": industry,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "geo_label": geo_label,
+        "cached": False
+    }
+
+
+@router.get(
+    "/task/{task_id}",
+    summary="Check Task Status",
+    dependencies=[Depends(get_current_user)],
+)
+async def get_task_status(task_id: str) -> dict[str, Any]:
+    """Check the status of an asynchronous ingestion task."""
+    from celery.result import AsyncResult
+    from app.tasks import celery_app
+    
+    result = AsyncResult(task_id, app=celery_app)
+    
+    # Optional parsing of result if SUCCESS
+    res_data = None
+    if result.ready():
+        res_data = result.result
         
-        if days_ago > 14:
-            # Historical dataset - won't change, cache permanently
-            await redis_client.set(cache_key, json.dumps(result))
-            logger.info("historical_ingestion_cached", cache_key=cache_key)
-        else:
-            # Recent/Future dataset - might update, cache for 4 hours
-            await redis_client.setex(cache_key, 14400, json.dumps(result))
-            logger.info("active_ingestion_cached", cache_key=cache_key, ttl=14400)
-            
-    except Exception as e:
-        logger.warning("redis_cache_write_failed", error=str(e))
-        
-    return result
+    return {
+        "task_id": task_id,
+        "status": result.status,  # PENDING, STARTED, SUCCESS, FAILURE
+        "result": res_data
+    }
 
 
 @router.post(

@@ -119,9 +119,9 @@ class TestDeduplication:
 class TestAdapterOrchestration:
     """Test the service's adapter coordination logic."""
 
-    def test_service_has_five_adapters(self):
+    def test_service_has_six_adapters(self):
         service = IngestionService()
-        assert len(service.adapters) == 5
+        assert len(service.adapters) == 6
 
     def test_adapter_names_are_unique(self):
         service = IngestionService()

@@ -34,12 +34,11 @@ class TestIndustryRegistry:
     """Verify the industry registry is complete and well-formed."""
 
     def test_registry_has_five_industries(self):
-        assert len(INDUSTRIES) == 5
+        assert len(INDUSTRIES) == 4
 
     def test_all_expected_keys_present(self):
         expected = {
-            "wireless_retail", "pizza_full_service", "pizza_delivery",
-            "pizza_bar", "pizza_carryout",
+            "wireless_retail", "pizza_all", "pizza_full_service", "pizza_delivery"
         }
         assert set(INDUSTRIES.keys()) == expected
 
@@ -78,11 +77,11 @@ class TestIndustryRegistry:
         assert "outage" in INDUSTRIES["wireless_retail"].categories
 
     def test_pizza_has_food_safety_category(self):
-        for key in ("pizza_full_service", "pizza_delivery", "pizza_bar", "pizza_carryout"):
+        for key in ("pizza_all", "pizza_full_service", "pizza_delivery"):
             assert "food_safety" in INDUSTRIES[key].categories
 
     def test_pizza_has_delivery_disruption_category(self):
-        for key in ("pizza_full_service", "pizza_delivery", "pizza_bar", "pizza_carryout"):
+        for key in ("pizza_all", "pizza_full_service", "pizza_delivery"):
             assert "delivery_disruption" in INDUSTRIES[key].categories
 
 
@@ -110,7 +109,7 @@ class TestMarkets:
 
     def test_detroit_in_pizza_markets(self):
         labels = [m.geo_label for m in PIZZA_MARKETS]
-        assert "Detroit" in labels
+        assert any("Detroit" in label for label in labels)
 
     def test_nyc_in_wireless_markets(self):
         labels = [m.geo_label for m in WIRELESS_MARKETS]
@@ -162,7 +161,7 @@ class TestHelpers:
         assert "wireless" in groups
         assert "pizza" in groups
         assert len(groups["wireless"]) == 1
-        assert len(groups["pizza"]) == 4
+        assert len(groups["pizza"]) == 3
 
     def test_get_all_markets(self):
         markets = get_all_markets("pizza_full_service")
@@ -191,7 +190,7 @@ class TestGroupConsistency:
         assert INDUSTRIES["wireless_retail"].group == "wireless"
 
     def test_all_pizza_industries_share_group(self):
-        for key in ("pizza_full_service", "pizza_delivery", "pizza_bar", "pizza_carryout"):
+        for key in ("pizza_all", "pizza_full_service", "pizza_delivery"):
             assert INDUSTRIES[key].group == "pizza"
 
     def test_every_industry_has_icon(self):

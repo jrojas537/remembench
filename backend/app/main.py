@@ -13,7 +13,7 @@ Routes:
 """
 
 from contextlib import asynccontextmanager
-
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -33,8 +33,22 @@ async def lifespan(app: FastAPI):
         app_name=settings.app_name,
         debug=settings.debug,
     )
+    
+    # Initialize global high-capacity HTTP client for downstream adapters
+    # Limits caps active concurrent DB/API scrapes preventing socket starvation
+    app.state.http_client = httpx.AsyncClient(
+        limits=httpx.Limits(
+            max_connections=50, 
+            max_keepalive_connections=15
+        ),
+        timeout=httpx.Timeout(30.0, read=60.0)
+    )
+    
     yield
+    
     logger.info("app_shutting_down")
+    if hasattr(app.state, "http_client"):
+        await app.state.http_client.aclose()
 
 
 # --- Application ---
