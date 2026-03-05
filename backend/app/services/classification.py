@@ -36,7 +36,8 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
             "threat_level": float, // 0.0 to 1.0 (How dangerous is this move to our operations)
             "summary": string // Short semantic summary of the action
         }}
-    ]
+    ],
+    "event_date": string // Optional. YYYY-MM-DD. Date the event ACTUALLY happens/happened, overriding the publication date if stated. Do not guess. Set to null if generic.
 }}
 """
 
@@ -96,7 +97,8 @@ Each object in the array must match this schema:
             "threat_level": float, // 0.0 to 1.0 (How dangerous is this move to our operations)
             "summary": string // Short semantic summary of the action
         }}
-    ]
+    ],
+    "event_date": string // Optional. YYYY-MM-DD. Date the event ACTUALLY happens/happened, overriding the publication date if stated. Do not guess. Set to null if generic.
 }}
 """
 
