@@ -95,10 +95,10 @@ export default function MetricCharts({ stats, events }) {
                 <div className="chart-container" style={{ height: "200px" }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={trendData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.2} vertical={false} />
                             <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                            <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} />
+                            <YAxis tick={{ fill: "var(--color-text-muted)", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                            <Tooltip contentStyle={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 8, color: "var(--color-text-primary)" }} />
                             <Line type="monotone" dataKey="count" stroke="var(--color-accent-indigo)" strokeWidth={3} dot={{ r: 4, fill: "var(--color-bg-card)", strokeWidth: 2, stroke: "var(--color-accent-indigo)" }} activeDot={{ r: 6 }} name="Event Count" />
                         </LineChart>
                     </ResponsiveContainer>
@@ -118,10 +118,10 @@ export default function MetricCharts({ stats, events }) {
                 <div className="chart-container">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={barData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                            <XAxis type="number" domain={[0, 100]} tick={{ fill: "#94a3b8", fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
-                            <YAxis type="category" dataKey="category" width={130} tick={{ fill: "#94a3b8", fontSize: 12 }} />
-                            <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} formatter={(value) => [`${value}%`, "Avg Impact"]} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                            <XAxis type="number" domain={[0, 100]} tick={{ fill: "var(--color-text-muted)", fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
+                            <YAxis type="category" dataKey="category" width={130} tick={{ fill: "var(--color-text-muted)", fontSize: 12 }} />
+                            <Tooltip contentStyle={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 8, color: "var(--color-text-primary)" }} formatter={(value) => [`${value}%`, "Avg Impact"]} />
                             <Bar dataKey="severity" radius={[0, 6, 6, 0]} maxBarSize={28}>
                                 {barData.map((entry, idx) => (
                                     <Cell key={idx} fill={entry.fill} />
@@ -148,8 +148,8 @@ export default function MetricCharts({ stats, events }) {
                                     <Cell key={idx} fill={entry.color} />
                                 ))}
                             </Pie>
-                            <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#f1f5f9" }} />
-                            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
+                            <Tooltip contentStyle={{ background: "var(--color-bg-card)", border: "1px solid var(--color-border)", borderRadius: 8, color: "var(--color-text-primary)" }} />
+                            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "var(--color-text-muted)" }} />
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
