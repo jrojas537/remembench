@@ -43,6 +43,19 @@ export const FALLBACK_INDUSTRIES = {
             "delivery_disruption", "food_safety", "supply_chain", "labor", "local_event", "sports",
         ],
     },
+    car_wash: {
+        label: "Car Wash",
+        icon: "🚗",
+        group: "car_wash",
+        markets: [
+            "National", "Los Angeles", "Chicago", "Houston", "Phoenix",
+            "Detroit Metro", "Dallas", "Miami",
+        ],
+        categories: [
+            "weather", "competitor_promo", "holiday", "news",
+            "outage", "supply_chain", "regulatory", "local_event", "sports",
+        ],
+    },
 };
 
 /* ------------------------------------------------------------------ *
@@ -91,42 +104,42 @@ export const CATEGORY_ICONS = {
  *  Demo Data — industry-specific samples                              *
  * ------------------------------------------------------------------ */
 
-export const WIRELESS_DEMO_EVENTS = [
+export const CAR_WASH_DEMO_EVENTS = [
     {
-        category: "weather", subcategory: "blizzard",
-        title: "Blizzard: 35cm snowfall in NYC metro area",
-        description: "Major winter storm dropped 35cm of snow across the Northeast, severely limiting foot traffic to retail stores for 3 consecutive days.",
-        severity: 0.92, confidence: 0.88, geo_label: "New York City", daysAgo: 365 + 45,
+        category: "weather", subcategory: "pollen_spike",
+        title: "Record High Pollen Count — Atlanta Metro",
+        description: "Severe early spring pollen layer triggered huge wash demand across area locations.",
+        severity: 0.92, confidence: 0.88, geo_label: "Atlanta", daysAgo: 365 + 45,
     },
     {
-        category: "competitor_promo", subcategory: "carrier_announcement",
-        title: "[VERIZON] Buy One Get One Free — iPhone 15 Pro",
-        description: "Verizon announced aggressive BOGO promotion on iPhone 15 Pro with new line activation, running for 2 weeks nationwide.",
+        category: "competitor_promo", subcategory: "acquisition_discount",
+        title: "[MISTER CAR WASH] 1 Month Free Unlimited",
+        description: "Competitor running a very aggressive customer acquisition localized blitz to steal market share.",
         severity: 0.85, confidence: 0.92, geo_label: "National", daysAgo: 365 + 30,
     },
     {
-        category: "holiday", subcategory: "public_holiday",
-        title: "Presidents' Day Weekend",
-        description: "Federal holiday weekend. Historically one of the top 10 wireless retail weekends due to carrier promotions.",
+        category: "regulatory", subcategory: "water_limits",
+        title: "Stage 2 Drought Water Restrictions",
+        description: "Municipal government mandated temporary ban on non-commercial at-home car washing driving extreme volume to our tunnels.",
         severity: 0.55, confidence: 0.95, geo_label: "National", daysAgo: 365 + 20,
     },
     {
-        category: "outage", subcategory: "network_outage",
-        title: "AT&T Nationwide Network Outage — 12 hours",
-        description: "Major AT&T service disruption affected millions of customers. Resulted in surge of walk-in traffic to competitor stores.",
+        category: "outage", subcategory: "tunnel_failure",
+        title: "Conveyor Equipment Failure — 12 hours",
+        description: "Major unpredicted tunnel malfunction caused hours of downtime taking locations completely offline on a sunny Saturday.",
         severity: 0.95, confidence: 0.87, geo_label: "National", daysAgo: 365 + 15,
     },
     {
-        category: "news", subcategory: "local_disruption",
-        title: "Super Bowl LVIII — Las Vegas",
-        description: "Major sporting event drew attention away from retail. Historically reduces non-essential shopping on game day by 15-25%.",
+        category: "supply_chain", subcategory: "chemical_shortage",
+        title: "Ceramic Coating Compound Shortage",
+        description: "Local distributor is low on ceramic and wax formulas leading to temporary menu item removals.",
         severity: 0.45, confidence: 0.78, geo_label: "National", daysAgo: 365 + 25,
     },
     {
-        category: "weather", subcategory: "extreme_cold",
-        title: "Extreme Cold: -18°C low in Chicago",
-        description: "Polar vortex conditions brought dangerously cold temperatures to the Midwest, reducing foot traffic by an estimated 40%.",
-        severity: 0.78, confidence: 0.85, geo_label: "Chicago", daysAgo: 365 + 40,
+        category: "weather", subcategory: "heavy_rain",
+        title: "Extended Rain Storms — South Region",
+        description: "Persistent mid-week rain suppressed normal car wash traffic dramatically over three days.",
+        severity: 0.78, confidence: 0.85, geo_label: "Houston", daysAgo: 365 + 40,
     },
 ];
 
@@ -188,9 +201,9 @@ export const PIZZA_DEMO_EVENTS = [
  * @param {string} industry - The target industry group key (e.g. "pizza_all").
  * @returns {Array<Object>} Synthetic array of complete event objects.
  */
-export function generateDemoData(industry = "wireless_retail") {
+export function generateDemoData(industry = "car_wash") {
     const isPizza = industry.startsWith("pizza");
-    const entries = isPizza ? PIZZA_DEMO_EVENTS : WIRELESS_DEMO_EVENTS;
+    const entries = isPizza ? PIZZA_DEMO_EVENTS : CAR_WASH_DEMO_EVENTS;
     const now = new Date();
 
     return entries.map((entry) => {
@@ -216,7 +229,7 @@ export function generateDemoData(industry = "wireless_retail") {
  * @param {string} industry - The target dashboard industry string.
  * @returns {Object} JSON mapping reflecting the standard `/api/v1/events/stats/summary` schema.
  */
-export function generateDemoStats(industry = "wireless_retail") {
+export function generateDemoStats(industry = "car_wash") {
     const isPizza = industry.startsWith("pizza");
 
     if (isPizza) {
