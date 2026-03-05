@@ -18,46 +18,47 @@ import { CATEGORY_COLORS } from "../lib/constants";
 import { StatCard } from "./UIComponents";
 
 export default function MetricCharts({ stats, events }) {
-    // Compute display stats
-    const totalEvents = stats
-        ? Object.values(stats.categories).reduce((s, c) => s + c.count, 0)
+    // Compute display stats securely mapping optional chains protecting against arbitrary API responses
+    const totalEvents = stats?.categories
+        ? Object.values(stats.categories).reduce((s, c) => s + (c.count || 0), 0)
         : 0;
 
-    const avgSeverity = stats
+    const avgSeverity = stats?.categories
         ? (
             Object.values(stats.categories).reduce(
-                (s, c) => s + c.avg_severity * c.count,
+                (s, c) => s + (c.avg_severity || 0) * (c.count || 0),
                 0
             ) / Math.max(totalEvents, 1)
         ).toFixed(2)
         : "—";
 
-    const categoryCount = stats ? Object.keys(stats.categories).length : 0;
-    const highSeverityCount = events.filter((e) => e.severity >= 0.7).length;
+    const categoryCount = stats?.categories ? Object.keys(stats.categories).length : 0;
+    const highSeverityCount = events?.filter ? events.filter((e) => (e.severity || 0) >= 0.7).length : 0;
 
     // Chart data — filtered to current industry's categories
-    const pieData = stats
+    const pieData = stats?.categories
         ? Object.entries(stats.categories).map(([cat, data]) => ({
             name: cat.replace(/_/g, " "),
-            value: data.count,
+            value: data.count || 0,
             color: CATEGORY_COLORS[cat] || "#64748b",
         }))
         : [];
 
-    const barData = stats
+    const barData = stats?.categories
         ? Object.entries(stats.categories).map(([cat, data]) => ({
             category: cat.replace(/_/g, " "),
-            severity: parseFloat((data.avg_severity * 100).toFixed(0)),
-            count: data.count,
+            severity: parseFloat(((data.avg_severity || 0) * 100).toFixed(0)),
+            count: data.count || 0,
             fill: CATEGORY_COLORS[cat] || "#64748b",
         }))
         : [];
 
     const trendData = useMemo(() => {
-        if (!events || events.length === 0) return [];
+        if (!events || !Array.isArray(events) || events.length === 0) return [];
         // Group by YYYY-MM-DD
         const groups = {};
         events.forEach(e => {
+            if (!e || !e.start_date) return;
             const d = e.start_date.split('T')[0];
             groups[d] = (groups[d] || 0) + 1;
         });
