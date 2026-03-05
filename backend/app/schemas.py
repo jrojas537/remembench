@@ -78,9 +78,14 @@ class ImpactEventBase(BaseModel):
     
     # --- Extracted Entities ---
     competitor_actions: List[CompetitorAction] = Field(
-        default=[],
+        default_factory=list,
         description="Structured actions taken by rival competitors within this event"
     )
+
+    @field_validator("competitor_actions", mode="before")
+    @classmethod
+    def coerce_none_to_empty_list(cls, v):
+        return [] if v is None else v
 
     # --- Impact Scoring ---
     severity: float = Field(
