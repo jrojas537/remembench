@@ -83,6 +83,8 @@ services:
     command: celery -A app.tasks worker --loglevel=info --concurrency=2
     env_file:
       - .env
+    healthcheck:
+      disable: true
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,7 +94,9 @@ services:
       - backend-data:/app/data
     restart: unless-stopped
     networks:
-      - app-network
+      app-network:
+        aliases:
+          - celery-worker
 
   # --------------------------------------------------------
   # Celery Beat — Scheduled task runner
@@ -104,12 +108,16 @@ services:
     command: celery -A app.tasks beat --loglevel=info
     env_file:
       - .env
+    healthcheck:
+      disable: true
     depends_on:
       redis:
         condition: service_started
     restart: unless-stopped
     networks:
-      - app-network
+      app-network:
+        aliases:
+          - celery-beat
 
   # --------------------------------------------------------
   # PostgreSQL + PostGIS
