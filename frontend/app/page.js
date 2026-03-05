@@ -10,7 +10,8 @@ import MetricCharts from "./components/MetricCharts";
 import {
     FALLBACK_INDUSTRIES,
     API_BASE,
-    CATEGORY_ICONS
+    CATEGORY_ICONS,
+    CATEGORY_COLORS
 } from "./lib/constants";
 
 /* ------------------------------------------------------------------ *
