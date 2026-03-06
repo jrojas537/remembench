@@ -39,26 +39,29 @@ export function useDashboardData({
             });
 
             // Handle date ranges and constraints
+            const start = new Date(startDate || defaultStart);
+            let end = new Date(endDate || defaultEnd);
+
             if (!isPremium) {
-                const start = new Date(startDate || defaultStart);
-                const end = new Date(endDate || defaultEnd);
                 const diffTime = end.getTime() - start.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                if (diffDays > 7 || diffDays < 0) {
-                    // Limit the query parameters without mutating the user's UI state mid-selection
-                    const newStart = new Date(end);
-                    newStart.setDate(newStart.getDate() - 7);
-                    const formattedStart = newStart.toISOString().split('T')[0];
-                    params.set("start_date", formattedStart);
-                } else {
-                    params.set("start_date", start.toISOString().split('T')[0]);
+                // Defense in depth: Standard accounts are locked to 3 days maximum (+2)
+                if (diffDays > 2 || diffDays < 0) {
+                    end = new Date(start);
+                    end.setDate(start.getDate() + 2);
                 }
-                params.set("end_date", end.toISOString().split('T')[0]);
             } else {
-                if (startDate) params.set("start_date", startDate);
-                if (endDate) params.set("end_date", endDate);
+                const diffTime = end.getTime() - start.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                // Defense in depth: Pro accounts are locked to 7 days maximum (+6)
+                if (diffDays > 6 || diffDays < 0) {
+                    end = new Date(start);
+                    end.setDate(start.getDate() + 6);
+                }
             }
+
+            params.set("start_date", start.toISOString().split('T')[0]);
+            params.set("end_date", end.toISOString().split('T')[0]);
 
             if (geoFilter) params.set("geo_label", geoFilter);
             if (categoryFilter) params.set("category", categoryFilter);

@@ -22,7 +22,7 @@ import { useDashboardData } from "./hooks/useDashboardData";
 
 export default function Dashboard() {
     const { user, token } = useAuth();
-    const [showSettings, setShowSettings] = useState(false);
+    const [hideDemo, setHideDemo] = useState(false);
 
     const [industries, setIndustries] = useState(null);
     const [industry, setIndustry] = useState("pizza_all");
@@ -65,7 +65,15 @@ export default function Dashboard() {
     }, []);
 
     const [startDate, setStartDate] = useState(defaultStart);
-    const [endDate, setEndDate] = useState(defaultEnd);
+
+    // Phase 5: Auto-Calculate End Date based on User Tier (+7 days vs +3 days)
+    const derivedEndDate = useMemo(() => {
+        const start = new Date(startDate || defaultStart);
+        const isPremium = user?.tier === "pro" || user?.tier === "premium";
+        const daysToAdd = isPremium ? 6 : 2; // 7 days total (start + 6) or 3 days total (start + 2)
+        start.setDate(start.getDate() + daysToAdd);
+        return start.toISOString().split('T')[0];
+    }, [startDate, defaultStart, user]);
 
     // Call the decoupled hook
     const {
@@ -84,7 +92,7 @@ export default function Dashboard() {
         geoFilter,
         categoryFilter,
         startDate,
-        endDate,
+        endDate: derivedEndDate,
         defaultStart,
         defaultEnd,
         user,
@@ -225,193 +233,185 @@ export default function Dashboard() {
     const handleSaveView = useCallback(() => {
         // In a real app, this would hit a backend endpoint to save to user's profile.
         // For now, we simulate a success state via alert.
-        alert(`Saved View:\nIndustry: ${activeIndustries[industry]?.label}\nMarket: ${geoFilter || "All Markets"}\nDates: ${startDate} to ${endDate}`);
-    }, [industry, geoFilter, startDate, endDate, activeIndustries]);
+        alert(`Saved View:\nIndustry: ${activeIndustries[industry]?.label}\nMarket: ${geoFilter || "All Markets"}\nDates: ${startDate} to ${derivedEndDate}`);
+    }, [industry, geoFilter, startDate, derivedEndDate, activeIndustries]);
 
     return (
-        <>
-            {showSettings && (
-                <ProfileSettings
-                    onClose={() => setShowSettings(false)}
-                    activeIndustries={activeIndustries}
-                />
-            )}
-
-            {/* Auth Meta Bar */}
-            <div style={{
-                display: "flex", justifyContent: "flex-end", padding: "0.5rem 1.5rem",
-                borderBottom: "1px solid var(--color-border)", background: "var(--color-bg-primary)",
-                fontSize: "0.875rem", gap: "1rem", alignItems: "center"
-            }}>
-                {user ? (
-                    <>
-                        <span style={{ color: "var(--color-text-muted)" }}>
-                            Signed in as <strong>{user.first_name || user.email}</strong>
-                        </span>
-                        <button
-                            onClick={() => setShowSettings(true)}
-                            style={{
-                                background: "none", border: "1px solid var(--border-color)",
-                                padding: "0.25rem 0.75rem", borderRadius: "4px",
-                                color: "var(--color-text-primary)", cursor: "pointer"
-                            }}
-                        >
-                            ⚙️ Profile / Preferences
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <span style={{ color: "var(--color-text-muted)" }}>Browsing in public mode</span>
-                        <Link href="/login" style={{
-                            background: "var(--color-text-primary)", color: "#ffffff",
-                            padding: "0.25rem 0.75rem", borderRadius: "4px", textDecoration: "none",
-                            fontWeight: "600"
-                        }}>
-                            Log In
-                        </Link>
-                    </>
-                )}
-            </div>
+        <div style={{ padding: "var(--space-6) var(--space-8)" }}>
             {/* Demo Mode Banner */}
-            {isDemo && (
-                <div className="demo-banner">
-                    💡 <strong>Demo Mode</strong> — Showing sample {industryConfig.label.toLowerCase()} data.
-                    Start the backend to see live data.
+            {isDemo && !hideDemo && (
+                <div style={{
+                    background: "var(--color-semantic-info-subtle)",
+                    borderLeft: "4px solid var(--color-semantic-info)",
+                    color: "var(--color-text-primary)",
+                    padding: "var(--space-3) var(--space-4)",
+                    borderRadius: "var(--radius-sm)",
+                    marginBottom: "var(--space-6)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontSize: "var(--font-size-sm)"
+                }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-semantic-info)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>
+                            <strong>Demo Mode</strong> — Showing sample {industryConfig.label.toLowerCase()} data. Start the backend to see live data.
+                        </span>
+                    </div>
+                    <button onClick={() => setHideDemo(true)} style={{ background: "none", border: "none", color: "var(--color-text-muted)", cursor: "pointer" }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                 </div>
             )}
 
             {/* Controls Bar */}
-            <div className="controls-bar">
-                {/* Industry Switcher — first position */}
-                <div className="control-group">
-                    <label htmlFor="industry-filter">Industry</label>
-                    <select
-                        id="industry-filter"
-                        value={industry}
-                        onChange={(e) => handleIndustryChange(e.target.value)}
-                        style={{ padding: "0.5rem", borderRadius: "8px", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
-                    >
-                        {Object.entries(
-                            Object.entries(activeIndustries).reduce((acc, [key, data]) => {
-                                const group = data.group || "other";
-                                if (!acc[group]) acc[group] = [];
-                                acc[group].push({ key, ...data });
-                                return acc;
-                            }, {})
-                        ).map(([group, items]) => (
-                            <optgroup key={group} label={group.toUpperCase()}>
-                                {items.map((item) => (
-                                    <option key={item.key} value={item.key}>
-                                        {item.icon} {item.label}
-                                    </option>
-                                ))}
-                            </optgroup>
-                        ))}
-                    </select>
-                </div>
+            <div style={{
+                background: "var(--color-bg-secondary)", borderRadius: "var(--radius-md)",
+                boxShadow: "var(--shadow-sm)", padding: "var(--space-4)", marginBottom: "var(--space-6)"
+            }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-4)", alignItems: "flex-end" }}>
+                    {/* Industry Switcher */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: "1 1 180px" }}>
+                        <label htmlFor="industry-filter" style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Industry</label>
+                        <select
+                            id="industry-filter"
+                            value={industry}
+                            onChange={(e) => handleIndustryChange(e.target.value)}
+                            style={{ padding: "var(--space-2)", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border-default)", background: "var(--color-bg-primary)", color: "var(--color-text-primary)", fontSize: "var(--font-size-sm)", width: "100%", outline: "none" }}
+                        >
+                            {Object.entries(
+                                Object.entries(activeIndustries).reduce((acc, [key, data]) => {
+                                    const group = data.group || "other";
+                                    if (!acc[group]) acc[group] = [];
+                                    acc[group].push({ key, ...data });
+                                    return acc;
+                                }, {})
+                            ).map(([group, items]) => (
+                                <optgroup key={group} label={group.toUpperCase()}>
+                                    {items.map((item) => (
+                                        <option key={item.key} value={item.key}>
+                                            {item.icon} {item.label}
+                                        </option>
+                                    ))}
+                                </optgroup>
+                            ))}
+                        </select>
+                    </div>
 
-                {/* Market Filter — dynamic per industry */}
-                <div className="control-group">
-                    <label htmlFor="geo-filter">Market</label>
-                    <select
-                        id="geo-filter"
-                        value={geoFilter}
-                        onChange={(e) => setGeoFilter(e.target.value)}
-                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
-                    >
-                        <option value="">All Markets</option>
-                        {industryConfig.markets.map((m) => {
-                            const marketName = typeof m === 'string' ? m : m.geo_label;
-                            return <option key={marketName} value={marketName}>{marketName}</option>;
-                        })}
-                    </select>
-                </div>
+                    {/* Market Filter */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: "1 1 180px" }}>
+                        <label htmlFor="geo-filter" style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Market</label>
+                        <select
+                            id="geo-filter"
+                            value={geoFilter}
+                            onChange={(e) => setGeoFilter(e.target.value)}
+                            style={{ padding: "var(--space-2)", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border-default)", background: "var(--color-bg-primary)", color: "var(--color-text-primary)", fontSize: "var(--font-size-sm)", width: "100%", outline: "none" }}
+                        >
+                            <option value="">All Markets</option>
+                            {industryConfig.markets.map((m) => {
+                                const marketName = typeof m === 'string' ? m : m.geo_label;
+                                return <option key={marketName} value={marketName}>{marketName}</option>;
+                            })}
+                        </select>
+                    </div>
 
-                {/* Category Filter — dynamic per industry */}
-                <div className="control-group">
-                    <label htmlFor="category-filter">Category</label>
-                    <select
-                        id="category-filter"
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
-                    >
-                        <option value="">All Categories</option>
-                        {industryConfig.categories.map((cat) => (
-                            <option key={cat} value={cat}>
-                                {CATEGORY_ICONS[cat] || "📌"} {cat.replace(/_/g, " ")}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                    {/* Category Filter */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: "1 1 180px" }}>
+                        <label htmlFor="category-filter" style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>Category</label>
+                        <select
+                            id="category-filter"
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            style={{ padding: "var(--space-2)", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border-default)", background: "var(--color-bg-primary)", color: "var(--color-text-primary)", fontSize: "var(--font-size-sm)", width: "100%", outline: "none" }}
+                        >
+                            <option value="">All Categories</option>
+                            {industryConfig.categories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                    {CATEGORY_ICONS[cat] || "📌"} {cat.replace(/_/g, " ")}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                <div className="control-group">
-                    <label htmlFor="start-date">Start Date</label>
-                    <input
-                        type="date"
-                        id="start-date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
-                    />
-                </div>
-                <div className="control-group">
-                    <label htmlFor="end-date">End Date</label>
-                    <input
-                        type="date"
-                        id="end-date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--color-border)", boxShadow: "var(--shadow-sm)", background: "var(--color-bg-card)", color: "var(--color-text-primary)" }}
-                    />
-                </div>
-
-                {!user || user.tier === "free" ? (
-                    <div className="control-group" style={{ display: "flex", alignItems: "center" }}>
-                        <div style={{ background: "rgba(245, 158, 11, 0.1)", color: "#d97706", padding: "0.5rem 1rem", borderRadius: "8px", fontSize: "0.875rem", display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "flex-start", maxWidth: "250px" }}>
-                            <span>🔒 Standard accounts are limited to a <b>3-day</b> search window.</span>
-                            <Link href="/pricing" style={{ color: "var(--color-primary)", textDecoration: "underline", fontWeight: "600" }}>Upgrade for unlimited range.</Link>
+                    {/* Start Date */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)", flex: "0 1 180px" }}>
+                        <label htmlFor="start-date" style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+                            Search Window (Start)
+                        </label>
+                        <input
+                            type="date"
+                            id="start-date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            style={{ padding: "var(--space-2)", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border-default)", background: "var(--color-bg-primary)", color: "var(--color-text-primary)", fontSize: "var(--font-size-sm)", width: "100%", outline: "none" }}
+                        />
+                        <div style={{ fontSize: "10px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+                            Ends: <strong>{derivedEndDate}</strong> {(!user || user.tier === "free") ? "(+3 Days)" : "(+7 Days)"}
                         </div>
                     </div>
-                ) : null}
+                </div>
 
-                <div
-                    className="control-group"
-                    style={{ alignSelf: "flex-end", marginLeft: "auto", flexDirection: "row", gap: "0.5rem" }}
-                >
-                    <button
-                        className="secondary-button"
-                        onClick={handleSaveView}
-                        title="Save this view to your profile"
-                    >
-                        🔖 Save View
-                    </button>
-                    <button
-                        className="secondary-button"
-                        onClick={handleExportCSV}
-                        disabled={loading || isSearchingWeb || events.length === 0}
-                        style={{ cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
-                        title="Download Data as CSV"
-                    >
-                        ⬇️ CSV
-                    </button>
-                    <button
-                        className="secondary-button"
-                        onClick={handlePrintPDF}
-                        disabled={loading || isSearchingWeb || events.length === 0}
-                        style={{ cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1 }}
-                        title="Print Dashboard to PDF"
-                    >
-                        📄 PDF
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={loadData}
-                        disabled={loading || isSearchingWeb}
-                        style={{ minWidth: "150px", opacity: (loading || isSearchingWeb) ? 0.8 : 1 }}
-                    >
-                        {(loading || isSearchingWeb) ? "⏳ Running..." : "▶ Run Report"}
-                    </button>
+                {/* Sub-row for buttons & warnings */}
+                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", marginTop: "var(--space-4)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--color-border-subtle)" }}>
+                    {(!user || user.tier === "free") ? (
+                        <div style={{ background: "var(--color-semantic-warning-subtle)", color: "var(--color-semantic-warning)", padding: "var(--space-2) var(--space-4)", borderRadius: "var(--radius-full)", fontSize: "var(--font-size-xs)", display: "flex", alignItems: "center", gap: "var(--space-2)", fontWeight: 500 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <span>Searching <b>{startDate}</b> through <b>{derivedEndDate}</b> (3 days). <Link href="/pricing" style={{ color: "var(--color-semantic-warning)", textDecoration: "underline", fontWeight: "700" }}>Upgrade</Link> for 7-day searches.</span>
+                        </div>
+                    ) : (
+                        <div style={{ background: "var(--color-semantic-success-subtle)", color: "var(--color-semantic-success)", padding: "var(--space-2) var(--space-4)", borderRadius: "var(--radius-full)", fontSize: "var(--font-size-xs)", display: "flex", alignItems: "center", gap: "var(--space-2)", fontWeight: 500 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Pro Enabled. Searching <b>{startDate}</b> through <b>{derivedEndDate}</b> (7 days).</span>
+                        </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                        <button
+                            onClick={handleSaveView}
+                            title="Save this view"
+                            style={{ background: "transparent", border: "1px solid var(--color-border-default)", padding: "var(--space-2) var(--space-4)", borderRadius: "var(--radius-sm)", color: "var(--color-text-secondary)", fontSize: "var(--font-size-sm)", fontWeight: 500, cursor: "pointer", transition: "var(--transition-fast)" }}
+                            onMouseEnter={(e) => e.target.style.background = "var(--color-bg-tertiary)"}
+                            onMouseLeave={(e) => e.target.style.background = "transparent"}
+                        >
+                            🔖 Save View
+                        </button>
+                        <button
+                            onClick={handleExportCSV}
+                            disabled={loading || isSearchingWeb || events.length === 0}
+                            title="Download CSV"
+                            style={{ background: "transparent", border: "1px solid var(--color-border-default)", padding: "var(--space-2) var(--space-4)", borderRadius: "var(--radius-sm)", color: "var(--color-text-secondary)", fontSize: "var(--font-size-sm)", fontWeight: 500, cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1, transition: "var(--transition-fast)" }}
+                            onMouseEnter={(e) => { if (!(loading || isSearchingWeb || events.length === 0)) e.target.style.background = "var(--color-bg-tertiary)"; }}
+                            onMouseLeave={(e) => e.target.style.background = "transparent"}
+                        >
+                            ⬇️ CSV
+                        </button>
+                        <button
+                            onClick={handlePrintPDF}
+                            disabled={loading || isSearchingWeb || events.length === 0}
+                            title="Print Dashboard to PDF"
+                            style={{ background: "transparent", border: "1px solid var(--color-border-default)", padding: "var(--space-2) var(--space-4)", borderRadius: "var(--radius-sm)", color: "var(--color-text-secondary)", fontSize: "var(--font-size-sm)", fontWeight: 500, cursor: (loading || isSearchingWeb || events.length === 0) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb || events.length === 0) ? 0.5 : 1, transition: "var(--transition-fast)" }}
+                            onMouseEnter={(e) => { if (!(loading || isSearchingWeb || events.length === 0)) e.target.style.background = "var(--color-bg-tertiary)"; }}
+                            onMouseLeave={(e) => e.target.style.background = "transparent"}
+                        >
+                            📄 PDF
+                        </button>
+                        <button
+                            onClick={loadData}
+                            disabled={loading || isSearchingWeb}
+                            style={{ background: "var(--color-brand-primary)", border: "none", padding: "var(--space-2) var(--space-5)", borderRadius: "var(--radius-sm)", color: "#ffffff", fontSize: "var(--font-size-sm)", fontWeight: 600, cursor: (loading || isSearchingWeb) ? "not-allowed" : "pointer", opacity: (loading || isSearchingWeb) ? 0.8 : 1, transition: "var(--transition-fast)", boxShadow: "var(--shadow-sm)" }}
+                            onMouseEnter={(e) => { if (!(loading || isSearchingWeb)) e.target.style.background = "var(--color-brand-primary-hover)"; }}
+                            onMouseLeave={(e) => { if (!(loading || isSearchingWeb)) e.target.style.background = "var(--color-brand-primary)"; }}
+                        >
+                            {(loading || isSearchingWeb) ? "⏳ Running..." : "▶ Run Report"}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -504,6 +504,6 @@ export default function Dashboard() {
                     API_BASE={API_BASE}
                 />
             )}
-        </>
+        </div>
     );
 }
