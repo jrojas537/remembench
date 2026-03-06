@@ -218,9 +218,22 @@ class IngestionService:
                 # Filter out LLM rejections before they pollute the database!
                 valid_events = []
                 for ev in batch:
-                    # If it's pure 0 impact and the LLM literally declared it didn't find anything, drop it
-                    if ev.severity == 0.0 and ev.confidence == 0.0 and ("No specific event" in ev.title or ev.category == "general"):
+                    title_lower = ev.title.lower() if ev.title else ""
+                    desc_lower = ev.description.lower() if ev.description else ""
+                    
+                    is_rejected = (
+                        "no specific event" in title_lower
+                        or "no relevant information" in title_lower
+                        or "no relevant information" in desc_lower
+                        or "no relevant competitive" in title_lower
+                        or "no relevant competitive" in desc_lower
+                        or (ev.category == "general" and ev.severity == 0.0)
+                    )
+                    
+                    # If it's pure 0 impact, or explicitly declares irrelevancy, drop it
+                    if (ev.severity == 0.0 and ev.confidence == 0.0) or is_rejected:
                         continue
+                        
                     valid_events.append(ev)
                 
                 # Replace the batch sequence with only the validated items cleanly
