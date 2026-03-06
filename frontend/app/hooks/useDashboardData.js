@@ -31,7 +31,7 @@ export function useDashboardData({
 
         try {
             // Setup parameters
-            const isPremium = user?.tier === "pro";
+            const isPremium = user?.tier === "premium";
 
             const params = new URLSearchParams({
                 limit: "50",
@@ -53,7 +53,7 @@ export function useDashboardData({
             } else {
                 const diffTime = end.getTime() - start.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                // Defense in depth: Pro accounts are locked to 7 days maximum (+6)
+                // Defense in depth: Premium accounts are locked to 7 days maximum (+6)
                 if (diffDays > 6 || diffDays < 0) {
                     end = new Date(start);
                     end.setDate(start.getDate() + 6);

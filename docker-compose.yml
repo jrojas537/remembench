@@ -130,8 +130,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-remembench}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    expose:
-      - "5432"
+    ports:
+      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-remembench} -d ${POSTGRES_DB:-remembench}" ]
       interval: 10s
@@ -146,8 +146,8 @@ services:
   # --------------------------------------------------------
   redis:
     image: redis:7-alpine
-    expose:
-      - "6379"
+    ports:
+      - "6379:6379"
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
