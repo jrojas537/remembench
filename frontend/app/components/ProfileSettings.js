@@ -28,7 +28,7 @@ export default function ProfileSettings({ onClose, activeIndustries }) {
     useEffect(() => {
         if (user?.preferences) {
             setIndustryPrefs(user.preferences.default_industry || "");
-            setMarketPrefs(user.preferences.default_market || "");
+            setMarketPrefs(user.preferences.default_market || "Detroit Metro");
             setThemePrefs(user.preferences.theme || "dark");
         }
     }, [user]);
@@ -154,7 +154,6 @@ export default function ProfileSettings({ onClose, activeIndustries }) {
                             disabled={!industryPrefs}
                             className="form-select"
                         >
-                            <option value="">None (All Markets)</option>
                             {availableMarkets.map((m) => {
                                 const marketName = typeof m === 'string' ? m : m.geo_label;
                                 return <option key={marketName} value={marketName}>{marketName}</option>;

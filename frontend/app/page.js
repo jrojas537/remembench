@@ -136,7 +136,7 @@ export default function Dashboard() {
     // Handle manual industry change
     const handleIndustryChange = (newIndustry) => {
         setIndustry(newIndustry);
-        setGeoFilter(""); // Reset only on manual change
+        setGeoFilter("Detroit Metro"); // Keep Detroit Metro as the default market when changing industries
         setCategoryFilter("");
     };
 
@@ -314,7 +314,6 @@ export default function Dashboard() {
                             onChange={(e) => setGeoFilter(e.target.value)}
                             style={{ padding: "var(--space-2)", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border-default)", background: "var(--color-bg-primary)", color: "var(--color-text-primary)", fontSize: "var(--font-size-sm)", width: "100%", outline: "none" }}
                         >
-                            <option value="">All Markets</option>
                             {industryConfig.markets.map((m) => {
                                 const marketName = typeof m === 'string' ? m : m.geo_label;
                                 return <option key={marketName} value={marketName}>{marketName}</option>;

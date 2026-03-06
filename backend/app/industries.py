@@ -330,9 +330,26 @@ def get_rss_feeds(industry_key: str) -> list[RSSFeed]:
 def get_web_search_query(industry_key: str, start_date: datetime, end_date: datetime) -> str:
     """Return the targeted search terms for web search adapters based on the industry and time period."""
     if industry_key.startswith("pizza"):
-        base_pizza_query = '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s Pizza") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "sporting event" OR game OR playoffs OR tournament)'
+        base_pizza_query = '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s Pizza" OR "pizza") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "sporting event" OR sports OR game OR playoffs OR tournament)'
+        
+        event_prompts = []
+        if start_date.month == 1 or end_date.month == 1:
+            event_prompts.append('"New Year\'s Day"')
+        if start_date.month == 2 or end_date.month == 2:
+            event_prompts.append('"Super Bowl"')
         if start_date.month == 3 or end_date.month == 3:
-            return f'{base_pizza_query} OR ("Pi Day" OR "3.14")'
+            event_prompts.append('("Pi Day" OR "3.14" OR "March Madness")')
+        if start_date.month == 10 or end_date.month == 10:
+            event_prompts.append('"Halloween"')
+        if start_date.month == 11 or end_date.month == 11:
+            event_prompts.append('"Thanksgiving Eve"')
+        if start_date.month == 12 or end_date.month == 12:
+            event_prompts.append('"New Year\'s Eve"')
+            
+        if event_prompts:
+            events_str = " OR ".join(event_prompts)
+            return f'{base_pizza_query} OR {events_str}'
+            
         return base_pizza_query
         
     if industry_key.startswith("car_wash"):
