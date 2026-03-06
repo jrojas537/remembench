@@ -227,7 +227,9 @@ class IngestionService:
                         or "no relevant information" in desc_lower
                         or "no relevant competitive" in title_lower
                         or "no relevant competitive" in desc_lower
-                        or (ev.category == "general" and ev.severity == 0.0)
+                        or "no relevant event" in title_lower
+                        or "no relevant event" in desc_lower
+                        or (ev.category in ("general", "unknown", "unclassified") and ev.severity == 0.0)
                     )
                     
                     # If it's pure 0 impact, or explicitly declares irrelevancy, drop it
