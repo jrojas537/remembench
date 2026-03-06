@@ -82,13 +82,13 @@ export default function PricingPage() {
                             Current Plan
                         </button>
                     ) : (
-                        <button disabled={user?.tier === "pro"} style={{ padding: "1rem", borderRadius: "8px", background: "transparent", border: "1px solid var(--border-color)", color: "var(--color-text-primary)", fontWeight: "bold", cursor: "pointer", width: "100%" }}>
-                            {user?.tier === "pro" ? "Included" : "Get Started"}
+                        <button disabled={user?.tier === "premium"} style={{ padding: "1rem", borderRadius: "8px", background: "transparent", border: "1px solid var(--color-border-default)", color: "var(--color-text-primary)", fontWeight: "bold", cursor: "pointer", width: "100%" }}>
+                            {user?.tier === "premium" ? "Included" : "Get Started"}
                         </button>
                     )}
                 </div>
 
-                {/* Pro Tier */}
+                {/* Premium Tier */}
                 <div style={{
                     background: "var(--background-paper)", border: "2px solid var(--color-primary)",
                     borderRadius: "16px", padding: "2rem", display: "flex", flexDirection: "column",
@@ -98,7 +98,7 @@ export default function PricingPage() {
                         POPULAR
                     </div>
 
-                    <h3 style={{ fontSize: "1.5rem", marginTop: 0 }}>Pro Access</h3>
+                    <h3 style={{ fontSize: "1.5rem", marginTop: 0 }}>Premium Access</h3>
                     <div style={{ fontSize: "2.5rem", fontWeight: "bold", margin: "1rem 0" }}>$49 <span style={{ fontSize: "1rem", color: "var(--color-text-muted)", fontWeight: "normal" }}>/mo</span></div>
 
                     <ul style={{ listStyle: "none", padding: 0, margin: "0 0 2rem 0", color: "var(--color-text-primary)", flexGrow: 1 }}>
@@ -109,7 +109,7 @@ export default function PricingPage() {
                         <li style={{ marginBottom: "0.75rem" }}>✓ Daily email alerts for anomalies</li>
                     </ul>
 
-                    {user?.tier === "pro" ? (
+                    {user?.tier === "premium" ? (
                         <button disabled style={{ padding: "1rem", borderRadius: "8px", background: "var(--background-default)", border: "1px solid var(--color-primary)", color: "var(--color-primary)", fontWeight: "bold", cursor: "not-allowed", width: "100%" }}>
                             Active Subscription
                         </button>
@@ -119,7 +119,7 @@ export default function PricingPage() {
                             onClick={() => handleUpgrade("remembench_pro_monthly")}
                             style={{ padding: "1rem", borderRadius: "8px", background: "var(--color-primary)", color: "white", border: "none", fontWeight: "bold", cursor: loading ? "wait" : "pointer", width: "100%", transition: "opacity 0.2s", opacity: loading ? 0.7 : 1 }}
                         >
-                            {loading ? "Redirecting..." : "Upgrade to Pro"}
+                            {loading ? "Redirecting..." : "Upgrade to Premium"}
                         </button>
                     )}
                 </div>

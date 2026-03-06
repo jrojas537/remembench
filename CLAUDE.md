@@ -42,3 +42,6 @@ This is an agentic Competitive Intelligence Engine built to track industry-speci
 - If stuck, run the command with verbose output or tail the docker logs: `docker compose logs backend -f`
 - Clear Context: If confusing edge cases occur, start fresh.
 - Always be explicit about paths when using `grep` or `find` across the monorepo splits.
+
+## Deployment Protocol Constraint
+CRITICAL RULE: When pushing to remote origins, NEVER implicitly push an active development branch (e.g., `beta-audit-*`) directly to `main` via shortcut commands like `git push origin <branch>:main` unless explicitly requested. Always push parallel matching branches (e.g., `git push origin <branch_name>`).

@@ -101,7 +101,7 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
                     db_user.stripe_customer_id = customer_id
                     db_user.stripe_subscription_id = subscription_id
                     db_user.subscription_status = "active"
-                    db_user.tier = "pro"
+                    db_user.tier = "premium"
                     await db.commit()
                     logger.info(f"Successfully upgraded user {user_id} to PRO")
                     

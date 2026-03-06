@@ -69,7 +69,7 @@ export default function Dashboard() {
     // Phase 5: Auto-Calculate End Date based on User Tier (+7 days vs +3 days)
     const derivedEndDate = useMemo(() => {
         const start = new Date(startDate || defaultStart);
-        const isPremium = user?.tier === "pro" || user?.tier === "premium";
+        const isPremium = user?.tier === "premium";
         const daysToAdd = isPremium ? 6 : 2; // 7 days total (start + 6) or 3 days total (start + 2)
         start.setDate(start.getDate() + daysToAdd);
         return start.toISOString().split('T')[0];
@@ -368,7 +368,7 @@ export default function Dashboard() {
                     ) : (
                         <div style={{ background: "var(--color-semantic-success-subtle)", color: "var(--color-semantic-success)", padding: "var(--space-2) var(--space-4)", borderRadius: "var(--radius-full)", fontSize: "var(--font-size-xs)", display: "flex", alignItems: "center", gap: "var(--space-2)", fontWeight: 500 }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            <span>Pro Enabled. Searching <b>{startDate}</b> through <b>{derivedEndDate}</b> (7 days).</span>
+                            <span>Premium Enabled. Searching <b>{startDate}</b> through <b>{derivedEndDate}</b> (7 days).</span>
                         </div>
                     )}
 

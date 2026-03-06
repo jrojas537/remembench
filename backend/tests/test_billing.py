@@ -81,6 +81,6 @@ class TestBillingWebhook:
         # Verify
         assert resp.status_code == 200
         assert mock_session.commit.called
-        assert dummy_user.tier == "pro"
+        assert dummy_user.tier == "premium"
         assert dummy_user.stripe_customer_id == "cus_12345"
         assert dummy_user.subscription_status == "active"
