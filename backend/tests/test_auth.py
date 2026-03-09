@@ -54,7 +54,7 @@ class TestAuthAPI:
                 instance.id = "123e4567-e89b-12d3-a456-426614174000"
                 instance.is_active = True
                 instance.is_admin = False
-                instance.tier = "free"
+                instance.tier = "premium"
             if isinstance(instance, UserPreference):
                 instance.id = "pref-uuid"
 
@@ -143,7 +143,7 @@ class TestUsersAPI:
             email="test@example.com", 
             is_active=True,
             is_admin=False,
-            tier="free"
+            tier="premium"
         )
         mock_result = MagicMock()
         mock_result.scalars().first.return_value = dummy_user

@@ -30,7 +30,7 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     
     # Billing fields
-    tier: Mapped[str] = mapped_column(String(50), default="free", server_default="free")
+    tier: Mapped[str] = mapped_column(String(50), default="premium", server_default="premium")
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True, index=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     subscription_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
