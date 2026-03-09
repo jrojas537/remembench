@@ -66,7 +66,7 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
                 "competitor_actions": []
             }
 
-    async def classify_events_batch(self, events_texts: list[str], industry: str) -> list[dict]:
+    async def classify_events_batch(self, events_texts: list[str], industry: str, search_start: datetime | None = None, search_end: datetime | None = None) -> list[dict]:
         """
         Passes a batched array of unstructured strings to the LLM for parallel evaluation.
         Significantly reduces 'system prompt' token taxation by asking the model to evaluate
@@ -93,6 +93,9 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
 Analyze the following batch of event texts and extract key metrics for competitive intelligence.
 Respond ONLY with a valid JSON array containing EXACTLY {len(events_texts)} objects in the exact same order as the input items.
 The response must be completely unformatted (no markdown blocks like ```json).
+
+Context: The user's active dashboard search window spans from {search_start.date() if search_start else 'unknown'} to {search_end.date() if search_end else 'unknown'}.
+If an event is a generic ongoing coupon or promotion that is ACTIVE during this search window, you MUST set the `event_date` safely within this window so it remains visible to the user, bypassing its original publication date.
 
 Each object in the array must match this schema:
 {{

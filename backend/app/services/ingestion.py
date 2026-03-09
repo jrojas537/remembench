@@ -161,7 +161,7 @@ class IngestionService:
         async def _process_batch(batch):
             async with sem:
                 texts = [ev.raw_payload.get("content", ev.description) if ev.raw_payload else ev.description for ev in batch]
-                classifications = await self.classification_service.classify_events_batch(texts, industry)
+                classifications = await self.classification_service.classify_events_batch(texts, industry, search_start=start_date, search_end=end_date)
                 
                 for i, ev in enumerate(batch):
                     if i < len(classifications):

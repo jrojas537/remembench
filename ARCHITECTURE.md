@@ -64,6 +64,7 @@ The LLM (Anthropic Claude by default) is mandated to reply in a strict JSON sche
 *   Assigns a `Severity` score (0.0 to 1.0) dictating the event's business disruption magnitude.
 *   Assigns a `Confidence` score (0.0 to 1.0).
 *   Extracts normalized event dates.
+*   **Temporal Situational Awareness:** The `IngestionService` injects the user's explicit requested dashboard window (e.g. `2025-05-01 to 2025-05-03`) into the classification batch prompt. This mathematical context ensures that if an older "ongoing coupon" is scraped, the LLM sets the date to safely remain within the dashboard view instead of blindly isolating the date to the historical article publication.
 *   Filters out irrelevant noise (e.g., articles mentioning "pizza" but having no business relevance).
 
 ---
