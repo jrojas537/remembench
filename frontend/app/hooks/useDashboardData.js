@@ -42,8 +42,6 @@ export function useDashboardData({
     const [aiBriefing, setAiBriefing] = useState(null);
     const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
 
-    const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
-
     /**
      * Primary load sequencer. Called manually or hooked to parameter changes.
      * 1. Constructs standard `URLSearchParams` clamping the date scopes tightly via backend fallbacks.
