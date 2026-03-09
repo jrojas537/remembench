@@ -8,9 +8,8 @@ impact business traffic patterns across all industries:
 - Both: Thanksgiving/Christmas closures reduce foot traffic
 
 Sources:
-- Abstract API (public holidays, free tier — requires key)
+- python-holidays (public holidays, offline mathematical calculation)
 - OpenHolidays API (school holidays, open-source — no key needed)
-- Built-in US calendar fallback (no API needed)
 """
 
 from datetime import datetime, timezone
@@ -45,7 +44,7 @@ _HOLIDAY_SEVERITY: dict[str, float] = {
 
 
 class HolidayAdapter(BaseAdapter):
-    """Adapter for public and school holiday APIs."""
+    """Adapter for public holidays (native) and school holidays (API)."""
 
     def __init__(self) -> None:
         super().__init__("holiday-api")

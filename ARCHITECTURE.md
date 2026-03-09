@@ -45,7 +45,7 @@ The heart of Remembench is its data ingestion engine. Instead of querying data o
 The `IngestionService` (`backend/app/services/ingestion.py`) dynamically initializes a suite of adapters. Adapters abstract the complexity of interacting with varied external sources.
 All adapters conform to the `BaseAdapter` interface, which includes built-in exponential backoff via Tenacity and asynchronous HTTP request pooling.
 
-*   **Structured Adapters**: Data is already highly normalized. (e.g., `OpenMeteoAdapter`, `HolidayAdapter`). Bypass expensive LLM processes.
+*   **Structured Adapters**: Data is already highly normalized. (e.g., `OpenMeteoAdapter`, `HolidayAdapter`). Bypass expensive LLM processes. The `HolidayAdapter` specifically leverages the offline mathematical `python-holidays` library to generate exact regional/federal observations natively without requiring slow, unstable API connections.
 *   **Unstructured Adapters**: Return raw text or noisy HTML. (e.g., `GdeltAdapter`, `WebSearchAdapter`, `IndustryRssAdapter`).
 
 ### 2.2 Transformation & Deduplication
