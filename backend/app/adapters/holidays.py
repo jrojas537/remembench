@@ -157,7 +157,7 @@ class HolidayAdapter(BaseAdapter):
                     start_date=h_date,
                     end_date=h_date,
                     geo_label=geo_label or "National",
-                    industry=industry,
+                    industry="all",
                     raw_payload=holiday,
                 ))
 
@@ -222,7 +222,7 @@ class HolidayAdapter(BaseAdapter):
                 start_date=h_start,
                 end_date=h_end,
                 geo_label=geo_label or "National",
-                industry=industry,
+                industry="all",
                 raw_payload=holiday,
             ))
 
@@ -283,7 +283,7 @@ class HolidayAdapter(BaseAdapter):
                     start_date=h_date,
                     end_date=h_date,
                     geo_label=geo_label or "National",
-                    industry=industry,
+                    industry="all",
                 ))
 
         return events

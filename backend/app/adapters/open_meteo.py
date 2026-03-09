@@ -199,7 +199,7 @@ class OpenMeteoAdapter(BaseAdapter):
                     longitude=longitude,
                     geo_radius_km=15.0,
                     geo_label=geo_label,
-                    industry=industry,
+                    industry="all",
                     raw_payload={
                         "temp_max_c": t_max,
                         "temp_min_c": t_min,

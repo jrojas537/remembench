@@ -100,6 +100,7 @@ async def list_events(
     """
     from app.industries import get_related_industry_keys
     related_keys = get_related_industry_keys(industry)
+    related_keys.append("all")
     query = select(ImpactEvent).where(ImpactEvent.industry.in_(related_keys))
 
     if category:
@@ -136,6 +137,7 @@ async def event_stats(
     """
     from app.industries import get_related_industry_keys
     related_keys = get_related_industry_keys(industry)
+    related_keys.append("all")
     
     stmt = (
         select(
