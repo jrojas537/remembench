@@ -92,7 +92,7 @@ PIZZA_MARKETS = [
 
 CAR_WASH_GDELT_QUERIES = [
     '"car wash" (promotion OR deal OR opening OR discount)',
-    '("Mister Car Wash" OR "Tommy\'s" OR "El Car Wash" OR "Jax Kar Wash" OR "Clean Express") (acquisition OR opening OR promotion)',
+    '("Mister Car Wash" OR "Tommy\'s" OR "El Car Wash" OR "Jax Kar Wash" OR "Clean Express" OR "Zax Autowash") (acquisition OR opening OR promotion OR deal OR discount OR membership)',
     'weather (pollen OR dust OR mud OR snow OR "saharan dust")',
     '"water restrictions" OR "drought" OR "climate"',
 ]
@@ -192,6 +192,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "local_event": "Local Event",
             "sports": "Sports",
         },
+        classification_prompt_addition="Be extraordinarily vigilant checking for the following competitor brands: Mister Car Wash, Tommy's Express, El Car Wash, Jax Kar Wash, Clean Express, and Zax Autowash. If they are expanding, offering promotions, or undergoing acquisitions, mark it with HIGH severity.",
     ),
 
     # === PIZZA (ALL) ===
@@ -360,7 +361,7 @@ def get_web_search_query(industry_key: str, start_date: datetime, end_date: date
         return base_pizza_query
         
     if industry_key.startswith("car_wash"):
-        return '("car wash" OR "Mister Car Wash" OR "Tommy\'s" OR "El Car Wash" OR "Jax Kar Wash" OR "Clean Express") (promotion OR discount OR opening OR "free wash" OR weather OR "pollen")'
+        return '("car wash" OR "Mister Car Wash" OR "Tommy\'s" OR "El Car Wash" OR "Jax Kar Wash" OR "Clean Express" OR "Zax Autowash") (promotion OR discount OR opening OR "free wash" OR membership OR expansion OR deal OR acquisition)'
     
     # Generic fallback
     label = get_industry(industry_key).label
