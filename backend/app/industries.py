@@ -52,6 +52,7 @@ class IndustryConfig:
     rss_feeds: list[RSSFeed]          # RSS feeds to monitor
     categories: list[str]             # Event categories relevant to this industry
     category_labels: dict[str, str] = field(default_factory=dict)  # Friendly names
+    classification_prompt_addition: str = ""  # Extra instructions for the LLM during classification
 
 
 # ---------------------------------------------------------------------------
