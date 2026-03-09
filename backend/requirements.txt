@@ -55,3 +55,4 @@ openai>=1.0.0
 tavily-python
 exa-py
 duckduckgo-search
+holidays>=0.60.0
