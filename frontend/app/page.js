@@ -48,34 +48,19 @@ export default function Dashboard() {
     const [selectedEventId, setSelectedEventId] = useState(null);
 
     const { defaultStart, defaultEnd } = useMemo(() => {
-        // Find equivalent weekend map from 2026 -> 2025
         const today = new Date();
-        const dayOfWeek = today.getDay(); // 0 is Sunday, 5 is Friday
-        let daysToFriday = 5 - dayOfWeek;
-        if (daysToFriday < 0) daysToFriday += 7;
 
-        // Find next Friday in current timeline
-        const nextFriday = new Date(today);
-        nextFriday.setDate(today.getDate() + daysToFriday);
+        // Exact same day, one year ago
+        const lastYear = new Date(today);
+        lastYear.setFullYear(today.getFullYear() - 1);
 
-        // Shift to target historical year (2025)
-        const lastYearFridayRaw = new Date(2025, nextFriday.getMonth(), nextFriday.getDate());
-
-        // Align day of week correctly (shift forward to nearest Friday)
-        const lastYearDayOfWeek = lastYearFridayRaw.getDay();
-        let shiftDays = 5 - lastYearDayOfWeek;
-        if (shiftDays > 3) shiftDays -= 7;
-        if (shiftDays < -3) shiftDays += 7;
-
-        const alignedFriday2025 = new Date(lastYearFridayRaw);
-        alignedFriday2025.setDate(lastYearFridayRaw.getDate() + shiftDays);
-
-        const alignedEnd2025 = new Date(alignedFriday2025);
-        alignedEnd2025.setDate(alignedFriday2025.getDate() + 6); // 7-day window
+        // Default end date anchor (will be re-evaluated by derivedEndDate based on free/premium tier bounds)
+        const endAnchor = new Date(lastYear);
+        endAnchor.setDate(lastYear.getDate() + 6);
 
         return {
-            defaultStart: alignedFriday2025.toISOString().split('T')[0],
-            defaultEnd: alignedEnd2025.toISOString().split('T')[0],
+            defaultStart: lastYear.toISOString().split('T')[0],
+            defaultEnd: endAnchor.toISOString().split('T')[0],
         }
     }, []);
 
