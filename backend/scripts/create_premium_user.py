@@ -11,17 +11,21 @@ async def main():
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalars().first()
         
-        target_password = "AmmoryEquity#26"
+        # Security: Do not hardcode administrative passwords. Use variables or manual prompts.
+        import os
+        from getpass import getpass
+        target_password = os.getenv("ADMIN_PASSWORD") or getpass("Enter premium user secret: ")
+        hashed_password = get_password_hash(target_password)
         
         if user:
             print(f"User {email} already exists! Updating tier to premium and updating password.")
             user.tier = "premium"
-            user.hashed_password = get_password_hash(target_password)
+            user.hashed_password = hashed_password
         else:
             print(f"Creating new premium user {email}...")
             user = User(
                 email=email,
-                hashed_password=get_password_hash(target_password),
+                hashed_password=hashed_password,
                 tier="premium",
                 first_name="Ammory",
                 last_name="Equity"
