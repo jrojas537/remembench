@@ -3,6 +3,24 @@
 import { useState, useCallback } from "react";
 import { API_BASE, generateDemoData, generateDemoStats } from "../lib/constants";
 
+/**
+ * Custom React Hook managing the primary dashboard data lifecycle.
+ * Handles HTTP requests to the backend for both Postgres cached events and live web scraping.
+ * Implements defensive date derivations enforcing User Tier limits (+3 vs +7 days).
+ * Asynchronously polls Celery tasks during "live" searches rather than blocking the main thread.
+ * 
+ * @param {Object} config - The configuration object mapping UI filters.
+ * @param {string} config.industry - Global industry scope (e.g. 'pizza_all').
+ * @param {string} config.geoFilter - Specific geographical bound.
+ * @param {string} config.categoryFilter - Enum bound to specific AI-parsed category events.
+ * @param {string} config.startDate - User defined anchor date.
+ * @param {string} config.endDate - Dynamically calculated termination date.
+ * @param {string} config.defaultStart - Computed dynamic start date fallback based on current date.
+ * @param {string} config.defaultEnd - Computed dynamic end date fallback based on constraints.
+ * @param {Object} config.user - The Auth Context user mapping bounds tracking 'paid' vs 'free' tiers.
+ * @param {string} config.token - JWT Token strictly authorizing API calls.
+ * @returns {Object} Data object containing events, stats arrays, and UI loading interaction states.
+ */
 export function useDashboardData({
     industry,
     geoFilter,
@@ -24,6 +42,16 @@ export function useDashboardData({
     const [aiBriefing, setAiBriefing] = useState(null);
     const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
 
+    const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
+
+    /**
+     * Primary load sequencer. Called manually or hooked to parameter changes.
+     * 1. Constructs standard `URLSearchParams` clamping the date scopes tightly via backend fallbacks.
+     * 2. Immediately fetches 'dry' event records explicitly bypassing web crawlers for instantaneous UX rendering.
+     * 3. Checks if standard (non-demo) mode. If true, dispatches a background Celery Job hitting the LLM scraping nodes.
+     * 4. Asynchronously polls the `/task/<id>` socket gracefully determining success vs failure states.
+     * 5. Finally hydrates the Executive Briefing AI synthesis model against the new raw outputs.
+     */
     const loadData = useCallback(async () => {
         setLoading(true);
         setHasRun(true);

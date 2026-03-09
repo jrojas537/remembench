@@ -20,6 +20,21 @@ import {
 
 import { useDashboardData } from "./hooks/useDashboardData";
 
+/**
+ * Main Dashboard Component
+ * 
+ * Serves as the primary interface for the Remembench platform. It brings together the
+ * data fetching logic (via the `useDashboardData` hook), user preferences, date constraints,
+ * and renders the active events alongside interactive metrics and AI-generated briefings.
+ * 
+ * Flow:
+ * 1. Derives initial date bounds based on a 7-day or 3-day history looking backward from Fridays.
+ * 2. Fetches the industry JSON registry to populate the dropdown filters.
+ * 3. Pipes the selected filters into the `useDashboardData` React hook.
+ * 4. Renders the `<MetricCharts />` and `<EventFeed />` using the returned data.
+ *
+ * @returns {JSX.Element} The rendered dashboard layout.
+ */
 export default function Dashboard() {
     const { user, token } = useAuth();
     const [hideDemo, setHideDemo] = useState(false);
@@ -133,13 +148,24 @@ export default function Dashboard() {
     const activeIndustries = industries || FALLBACK_INDUSTRIES;
     const industryConfig = useMemo(() => activeIndustries[industry], [activeIndustries, industry]);
 
-    // Handle manual industry change
+    /**
+     * Handles industry selection changes.
+     * Automatically locks the geoFilter to 'Detroit Metro' to prevent cross-contamination
+     * of markets when switching between different industry taxonomies.
+     * 
+     * @param {string} newIndustry - The key of the newly selected industry (e.g., 'pizza_all')
+     */
     const handleIndustryChange = (newIndustry) => {
         setIndustry(newIndustry);
         setGeoFilter("Detroit Metro"); // Keep Detroit Metro as the default market when changing industries
         setCategoryFilter("");
     };
 
+    /**
+     * Generates and downloads a CSV export of the current active dataset.
+     * Maps the event properties (dates, severity, confidence) into strict strings.
+     * Replaces inner quotes dynamically to prevent CSV column breaking.
+     */
     const handleExportCSV = useCallback(() => {
         if (!events || events.length === 0) return;
 
@@ -175,6 +201,10 @@ export default function Dashboard() {
         URL.revokeObjectURL(url);
     }, [events, industry]);
 
+    /**
+     * Triggers the native browser print dialogue configured via `@media print` CSS
+     * rules to cleanly export the visualizations onto a static PDF representation.
+     */
     const handlePrintPDF = useCallback(() => {
         window.print();
     }, []);

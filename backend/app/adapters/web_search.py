@@ -60,7 +60,23 @@ class WebSearchAdapter(BaseAdapter):
     ) -> List[ImpactEventCreate]:
         """
         Attempts to fetch news surrounding a specific market/industry over a date range.
-        Implementing BaseAdapter contract.
+        Implements a tiered fallback chain to ensure maximum reliability:
+        1. Tavily (Primary): Returns highly structured content optimized for LLM consumption.
+        2. Exa (Secondary): Returns semantic neural-search web hits if Tavily fails.
+        3. DuckDuckGo (Tertiary): Free synchronous fallback executed in an async thread pool.
+        
+        All results are heavily cached via Redis to prevent redundant API billing.
+        
+        Args:
+            start_date: The beginning of the search constraint window.
+            end_date: The termination date of the search window.
+            industry: The active vertical key (e.g., 'pizza_all').
+            latitude: (Optional) Geolocation Y coordinate.
+            longitude: (Optional) Geolocation X coordinate.
+            geo_label: (Optional) Semantic market name (e.g., 'Detroit Metro').
+            
+        Returns:
+            List[ImpactEventCreate]: Unstructured payload items ready for LLM NLP mapping.
         """
         limit = 15
         market = geo_label if geo_label else "Unknown"

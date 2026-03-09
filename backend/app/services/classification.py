@@ -68,8 +68,19 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
 
     async def classify_events_batch(self, events_texts: list[str], industry: str) -> list[dict]:
         """
-        Passes a batch of raw texts to the LLM to extract meaning.
-        Returns a list of dicts conforming to the expected event schema.
+        Passes a batched array of unstructured strings to the LLM for parallel evaluation.
+        Significantly reduces 'system prompt' token taxation by asking the model to evaluate
+        10 events simultaneously and return exactly 10 matching JSON schemas in an array.
+        
+        If the model hallucinates or breaks the JSON schema mapping, the internal catch block
+        falls back to injecting generic neutral rows explicitly averting entire ingestion failures.
+        
+        Args:
+            events_texts: List of raw scraped strings (up to 2000 chars each)
+            industry: The active vertical key binding the context (e.g. 'car_wash')
+            
+        Returns:
+            list[dict]: Strongly typed Python objects mimicking the Pydantic schema required by PostGres.
         """
         if not events_texts:
             return []
@@ -143,8 +154,18 @@ Each object in the array must match this schema:
 
     async def generate_executive_briefing(self, events: list[dict], industry: str) -> dict:
         """
-        Reads an array of event dictionaries and synthesizes a high-level strategic brief.
-        Truncates list size to avoid context-window overflows on heavy historical queries.
+        Synthesizes a high-level strategic executive brief based on recent historically extracted data.
+        
+        To protect the LLM context window limits and control API billing costs, this method
+        explicitly slices the payload array limiting context to the top 50 recent events.
+        It parses the semantic titles and descriptions instead of the entire raw payloads.
+        
+        Args:
+            events: List of fully classified events mapped from the primary DB fetch.
+            industry: Target vertical.
+            
+        Returns:
+            dict: The executive synthesis JSON including sentiment, threat scores, and actions.
         """
         if not events:
             return {

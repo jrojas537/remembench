@@ -27,7 +27,14 @@ logger = get_logger("main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifecycle — startup and shutdown hooks."""
+    """
+    Application lifecycle — startup and shutdown hooks.
+    
+    Instantiates a single global `httpx.AsyncClient` bounded directly to the active 
+    event loop here. This definitively prevents socket starvation and solves the 
+    'Event loop is closed' unhandled exceptions caused by adapters lazily evaluating
+    disjoint thread pools. 
+    """
     logger.info(
         "app_starting",
         app_name=settings.app_name,

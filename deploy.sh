@@ -10,18 +10,20 @@ VPS_HOST="187.77.4.109"
 VPS_DIR="~/Remembench"
 VPS_PASS="***REDACTED***"
 COMMIT_MSG="${1:-deploy: update $(date '+%Y-%m-%d %H:%M')}"
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-echo "🔄 [1/4] Committing and pushing local changes..."
+echo "🔄 [1/4] Committing and pushing local changes to $CURRENT_BRANCH..."
 git add -A
 git diff --cached --quiet && echo "  (nothing new to commit)" || git commit -m "$COMMIT_MSG"
-git push origin main
+git push origin "$CURRENT_BRANCH"
 echo "✅ Pushed to GitHub"
 
 echo ""
-echo "🔄 [2/4] Pulling on VPS..."
+echo "🔄 [2/4] Pulling on VPS and syncing to $CURRENT_BRANCH..."
+# Use fetch and hard reset to perfectly mirror the branch without messy merge commits
 sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
-  "cd ${VPS_DIR} && git pull origin main"
-echo "✅ VPS pulled latest code"
+  "cd ${VPS_DIR} && git fetch origin && git checkout $CURRENT_BRANCH && git reset --hard origin/$CURRENT_BRANCH"
+echo "✅ VPS synced to latest code on $CURRENT_BRANCH"
 
 echo ""
 echo "🔄 [3/4] Rebuilding Docker containers..."

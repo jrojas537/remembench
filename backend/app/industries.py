@@ -328,7 +328,14 @@ def get_rss_feeds(industry_key: str) -> list[RSSFeed]:
 
 
 def get_web_search_query(industry_key: str, start_date: datetime, end_date: datetime) -> str:
-    """Return the targeted search terms for web search adapters based on the industry and time period."""
+    """
+    Constructs targeted Boolean search strings for external web crawlers (Tavily/Exa).
+    
+    Contains explicit algorithmic overrides for the 'pizza' vertical. If the search window
+    intersects with historically massive pizza consumption peaks (Halloween, Super Bowl, etc.),
+    it automatically injects exact-match string literals into the query forcing the web 
+    scrapers to hunt for localized holiday promotions natively!
+    """
     if industry_key.startswith("pizza"):
         base_pizza_query = '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s Pizza" OR "pizza") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "sporting event" OR sports OR game OR playoffs OR tournament)'
         
