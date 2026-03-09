@@ -1,15 +1,23 @@
 """
 Remembench — FastAPI Application Entry Point
 
-Sets up middleware, registers route modules, and configures
-the application for both development and production.
+This module serves as the functional brain of the FastAPI web server. It is primarily
+responsible for 3 core operations:
+1. Context Lifecycle: Enforcing a globally pooled, high-capacity asynchronous 
+   HTTP client (`httpx.AsyncClient`) across all scraping adapters to circumvent socket 
+   starvation.
+2. Middleware Instantiation: Activating CORS origins (via `frontend` configurations) 
+   and OWASP strict security headers (`X-XSS-Protection`, etc.).
+3. Semantic Routing: Exposing endpoints bounded strictly to `/api/v1` namespace 
+   across specialized domains ranging from AI classification (`impact_events`) 
+   to ETL execution (`ingestion`).
 
 Routes:
-    /api/v1/events       — Impact event CRUD
-    /api/v1/yoy          — Year-over-Year comparisons
-    /api/v1/ingestion    — Data ingestion triggers
-    /api/v1/industries   — Industry registry (for frontend)
-    /api/v1/health       — Health check
+    /api/v1/events       — YoY Impact event CRUD & AI Briefings
+    /api/v1/yoy          — Year-over-Year geospatial comparison engine
+    /api/v1/ingestion    — Manual data ingestion triggers for the Celery tasks
+    /api/v1/industries   — Static industry registry endpoints
+    /api/v1/health       — Database / Postgres health check verification
 """
 
 from contextlib import asynccontextmanager

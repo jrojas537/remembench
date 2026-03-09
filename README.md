@@ -9,16 +9,15 @@
 
 ---
 
-## What It Does
+Remembench answers the critical data science question: **"What external context drove this sudden performance delta?"**
 
-Remembench answers the question: **"What happened during this period that could explain the performance delta?"**
+It asynchronously scrapes noisy internet data—weather sensors, RSS alerts, news scraping APIs, web-searches—and normalizes it via local embeddings and Anthropic Claude LLM into a highly structured `ImpactEvent` topology.
 
-It ingests contextual data from multiple sources (weather APIs, news feeds, holiday calendars, competitor promotions) and normalizes everything into **Impact Events** — a universal schema that works across industries. Analysts use these events to:
+By mapping previously abstract data points into hard analytical numbers (e.g. *Severity: 0.8*, *Category: Competitor Promotion*), operators can isolate noise from their raw YoY metric curves in an interactive Next.js dashboard.
 
-- Adjust YoY comparisons for factors beyond their control
-- Forecast more accurately by understanding historical context
-- Identify patterns (e.g., Super Bowl Sunday = +40% pizza delivery)
-- Avoid false conclusions from raw YoY metrics
+📖 **Deep Dives:**
+*   [Technical Architecture & LLM Data Flow](ARCHITECTURE.md)
+*   [Developer & Contribution Guide](CONTRIBUTING.md)
 
 ## Supported Industries
 
@@ -32,66 +31,11 @@ It ingests contextual data from multiple sources (weather APIs, news feeds, holi
 
 > Adding a new industry is a single entry in `backend/app/industries.py` — no code changes required elsewhere.
 
----
-
 ## Architecture
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Next.js   │────▶│    Nginx    │────▶│   FastAPI    │
-│  Dashboard  │     │   Reverse   │     │   Backend    │
-│  (port 3000)│     │   Proxy     │     │  (port 8000) │
-└─────────────┘     └─────────────┘     └──────┬───────┘
-                                               │
-                    ┌──────────────────────────┤
-                    │                          │
-              ┌─────▼─────┐            ┌───────▼──────┐
-              │  PostgreSQL │            │    Redis     │
-              │  + PostGIS  │            │   (Celery)   │
-              │  (port 5432)│            │  (port 6379) │
-              └─────────────┘            └──────┬───────┘
-                                               │
-                                    ┌──────────┤──────────┐
-                                    │          │          │
-                              ┌─────▼──┐ ┌────▼───┐ ┌───▼────┐
-                              │ Worker │ │  Beat  │ │Backfill│
-                              │(nightly)│ │(sched) │ │(manual)│
-                              └────────┘ └────────┘ └────────┘
-```
+Please reference [ARCHITECTURE.md](ARCHITECTURE.md) for a complete system diagram, caching flow (including Redis Idempotency and PostgreSQL zero-token deduplication), and a breakdown of how our adapters scale concurrently.
 
-### Data Pipeline & LLM Processing
-
-The ingestion payload handles both structured APIs and chaotic unstructured data (like web scraped articles) using a highly optimized, cost-conscious pipeline:
-
-```
-  [Structured]
-  Open-Meteo ──┐
-  NOAA CDO  ───┼───────────▶ (Bypass LLM) ─────────┐
-  Holidays  ───┘                                   │
-                                                   ▼
-  [Unstructured]                              PostgreSQL
-  GDELT News ──┐                                   ▲
-  RSS Feeds ───┼──▶ Semantic ──▶ Batch LLM ────────┘
-  Tavily/Exa ──┘    Dedup        Processing
-```
-
-**Optimization Layers:**
-1. **Tier 1 DB Pre-Flight:** Prevents the system from querying the LLM for articles that already exist in PostgreSQL.
-2. **Tier 2 Idempotent Route Caching:** Caches the full ingestion response in Redis (permanently for >14 day old requests, 4 hours for recent searches) bridging identical requests across different users without launching pipelines.
-3. **Tier 3 HTTP Caching:** Falls back to Redis JSON stores within individual adapters (like Tavily/Exa) to intercept repeated date radius bumps.
-
-### Key Components
-
-| Component | Path | Purpose |
-|-----------|------|---------|
-| **Industry Registry** | `backend/app/industries.py` | Centralized config for all verticals |
-| **Adapters** | `backend/app/adapters/` | Source-specific API fetching |
-| **Ingestion Service** | `backend/app/services/` | 3-Tier Cache orchestration + dedup + batch upsert |
-| **Classification** | `services/classification.py`| Anthropic AI clustering & executive briefings |
-| **Impact Events API** | `routes/anomaly_events.py` | CRUD endpoints |
-| **YoY Comparison** | `routes/yoy_comparison.py` | Cross-year analysis engine |
-| **Redis Cache** | `backend/app/cache.py` | Async global dependency pool |
-| **Dashboard** | `frontend/app/page.js` | Interactive industry UI + Client-Side Exports |
+---
 
 ---
 
