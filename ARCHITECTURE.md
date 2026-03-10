@@ -68,6 +68,9 @@ The LLM (Anthropic Claude 3 Haiku by default) is configured with `max_tokens=409
 *   **Temporal Situational Awareness:** The `IngestionService` injects the user's explicit requested dashboard window (e.g. `2025-05-01 to 2025-05-03`) into the classification batch prompt. This mathematical context ensures that if an older "ongoing coupon" is scraped, the LLM sets the date to safely remain within the dashboard view instead of blindly isolating the date to the historical article publication.
 *   Filters out irrelevant noise (e.g., articles mentioning "pizza" but having no business relevance).
 
+### 2.4 Webhook Broadcast Service
+Once events survive deduplication and LLM NLP enhancement, they are evaluated against active `WebhookSubscriptions`. If an event's LLM severity score meets or exceeds a registered webhook's `min_severity` threshold, the Celery pipeline constructs an immutable JSON payload containing a cryptographic HMAC signature and dispatches it via a low-latency HTTP push to the subscriber (e.g. Zapier, Slack, or an intelligent MCP module).
+
 ---
 
 ## 3. The Analytics & Dashboard Flow
