@@ -16,9 +16,11 @@ class AnthropicClient(BaseLLMClient):
             
         messages = [{"role": "user", "content": user}]
         
+        prefill_char = ""
         if json_mode:
             # Prefill the assistant's response to force pure JSON output without markdown blocks
-            messages.append({"role": "assistant", "content": "{"})
+            prefill_char = "[" if "JSON array" in system else "{"
+            messages.append({"role": "assistant", "content": prefill_char})
             
         response = await self.client.messages.create(
             model=self.model,
@@ -30,7 +32,7 @@ class AnthropicClient(BaseLLMClient):
         
         text = response.content[0].text
         if json_mode:
-            # We prefilled '{', so we must prepend it back to the response
-            text = "{" + text
+            # We prefilled the token, so we must prepend it back to the response
+            text = prefill_char + text
             
         return text
