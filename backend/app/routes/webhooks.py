@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.auth_jwt import get_current_user
+from app.routes.deps_auth import get_current_user
 from app.database import get_db
 from app.logging import get_logger
 from app.models_auth import User, WebhookSubscription
