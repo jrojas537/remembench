@@ -42,12 +42,13 @@ logger = get_logger("main")
 # We leverage `slowapi` to inject sliding-window rate limit checks before 
 # yielding to the asynchronous router stack. By pushing the memory tracker
 # onto the robust Redis cluster (`settings.redis_url`) rather than an in-memory 
-# Python dict, we ensure state is synchronized across all Uvicorn worker threads 
-# and horizontally scaled Docker replicas natively.
+import redis
+redis_cache = redis.from_url(str(settings.redis_url).replace("redis://127.0.0.1", "redis://redis"))
+
 limiter = Limiter(
     key_func=get_remote_address, 
     default_limits=["120/minute"], 
-    storage_uri=settings.redis_url
+    storage_uri=str(settings.redis_url).replace("redis://127.0.0.1", "redis://redis")
 )
 
 
