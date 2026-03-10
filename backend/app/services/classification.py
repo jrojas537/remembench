@@ -179,6 +179,10 @@ Each object in the array must match this schema:
                 "key_opportunities": []
             }
 
+        import hashlib
+        import redis.asyncio as redis
+        from app.config import settings
+
         # Truncate to reasonable limits to avoid token overflow
         event_texts: list[str] = []
         for e in events[:50]:
@@ -192,6 +196,22 @@ Each object in the array must match this schema:
             event_texts.append(f"[{cat} - Severity: {sev}] {title}: {desc[:200]}")
 
         payload = "\n".join(event_texts)
+
+        # -- REDIS CACHE INTERCEPT --
+        # We uniquely identify identical requests (same industry + identical text chunk).
+        cache_key_string = f"{industry}::{payload}"
+        cache_key = "llm_briefing_" + hashlib.md5(cache_key_string.encode('utf-8')).hexdigest()
+        
+        # Connect to the existing Celery broker explicitly as an async cache
+        redis_client = redis.from_url(settings.redis_url)
+        try:
+            cached_briefing = await redis_client.get(cache_key)
+            if cached_briefing:
+                logger.info("llm_briefing_cache_hit", key=cache_key)
+                return json.loads(cached_briefing)
+        except Exception as e:
+            logger.warning("redis_cache_read_failure", error=str(e))
+            pass # Failsafe open if Redis dies; allow the LLM to process anyway
 
         system_prompt = f"""You are a Chief Strategy Officer for the '{industry}' industry.
 You are scanning the following list of recent impact events. 
@@ -221,7 +241,15 @@ The JSON must map exactly to this schema:
             if cleaned_text.endswith("```"):
                 cleaned_text = cleaned_text[:-3]
                 
-            return json.loads(cleaned_text.strip())
+            final_json = json.loads(cleaned_text.strip())
+            
+            # Save the successful response back to Redis for 12 hours (43200 seconds)
+            try:
+                await redis_client.set(cache_key, json.dumps(final_json), ex=43200)
+            except Exception as e:
+                logger.warning("redis_cache_write_failure", error=str(e))
+                
+            return final_json
         except Exception as e:
             logger.error("llm_briefing_failed", error=str(e))
             return {
@@ -231,3 +259,5 @@ The JSON must map exactly to this schema:
                 "immediate_actions_recommended": [],
                 "market_sentiment": "Stable"
             }
+        finally:
+            await redis_client.aclose()

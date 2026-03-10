@@ -13,13 +13,14 @@ to parse "stats" as a UUID.
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from geoalchemy2.functions import ST_MakePoint, ST_SetSRID
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.logging import get_logger
+from app.main import limiter
 from app.models import ImpactEvent
 from app.schemas import ImpactEventCreate, ImpactEventResponse, AIBriefingRequest, AIBriefingResponse
 from app.auth import require_api_key
@@ -81,7 +82,9 @@ async def create_event(
 
 
 @router.get("/", response_model=list[ImpactEventResponse], dependencies=[Depends(get_current_user)])
+@limiter.limit("60/minute")
 async def list_events(
+    request: Request,
     category: str | None = Query(None, description="Filter by impact category"),
     source: str | None = Query(None, description="Filter by data source"),
     geo_label: str | None = Query(None, description="Filter by market name (partial match)"),
@@ -125,7 +128,9 @@ async def list_events(
 
 # NOTE: /stats/summary must come BEFORE /{event_id} — see module docstring.
 @router.get("/stats/summary", dependencies=[Depends(get_current_user)])
+@limiter.limit("60/minute")
 async def event_stats(
+    request: Request,
     industry: str = Query("wireless_retail", description="Industry vertical"),
     start_date: datetime | None = Query(None, description="Filter events on or after this date"),
     end_date: datetime | None = Query(None, description="Filter events on or before this date"),
@@ -173,7 +178,8 @@ async def event_stats(
     }
 
 @router.post("/briefing", response_model=AIBriefingResponse, dependencies=[Depends(get_current_user)])
-async def get_executive_briefing(request: AIBriefingRequest) -> dict:
+@limiter.limit("5/minute")
+async def get_executive_briefing(request_obj: Request, request: AIBriefingRequest) -> dict:
     """
     Generate an AI Executive Briefing from a list of events natively structured in JSON.
     """

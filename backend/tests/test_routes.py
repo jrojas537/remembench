@@ -53,9 +53,9 @@ class TestIndustriesAPI:
         data = resp.json()
         assert "groups" in data
         groups = data["groups"]
-        assert "wireless" in groups
+        assert "car_wash" in groups
         assert "pizza" in groups
-        # 1 wireless + 3 pizza = 4 total configs
+        # 1 car_wash + 3 pizza = 4 total configs
         total = sum(len(v) for v in groups.values())
         assert total == 4
 

@@ -14,11 +14,12 @@ from datetime import datetime
 import asyncio
 from dateutil.relativedelta import relativedelta
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.main import limiter
 from app.logging import get_logger
 from app.models import ImpactEvent
 from app.routes.deps_auth import get_current_user
@@ -141,7 +142,9 @@ def _find_significant_deltas(
 
 
 @router.get("/compare", response_model=YoYComparisonResponse, dependencies=[Depends(get_current_user)])
+@limiter.limit("30/minute")
 async def compare_yoy(
+    request: Request,
     start_date: datetime = Query(..., description="Start of the target period"),
     end_date: datetime = Query(..., description="End of the target period"),
     lookback_years: int = Query(1, ge=1, le=5, description="Years to look back"),
