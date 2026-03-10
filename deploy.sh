@@ -23,14 +23,14 @@ echo "✅ Pushed to GitHub"
 echo ""
 echo "🔄 [2/4] Pulling on VPS and syncing to $CURRENT_BRANCH..."
 # Use fetch and hard reset to perfectly mirror the branch without messy merge commits
-sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
+ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
   "cd ${VPS_DIR} && git fetch origin && git checkout $CURRENT_BRANCH && git reset --hard origin/$CURRENT_BRANCH"
 echo "✅ VPS synced to latest code on $CURRENT_BRANCH"
 
 echo ""
 echo "🔄 [3/4] Rebuilding Docker containers..."
-sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
-  "cd ${VPS_DIR} && echo '${VPS_PASS}' | sudo -S docker compose build && echo '${VPS_PASS}' | sudo -S docker compose up -d"
+ssh -t -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
+  "cd ${VPS_DIR} && sudo docker compose build && sudo docker compose up -d"
 echo "✅ Containers rebuilt and restarted"
 
 echo ""
@@ -45,8 +45,8 @@ fi
 
 echo ""
 echo "🔄 [5/5] Restarting Nginx to clear IP cache..."
-sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
-  "cd ${VPS_DIR} && echo '${VPS_PASS}' | sudo -S docker compose restart nginx"
+ssh -t -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} \
+  "cd ${VPS_DIR} && sudo docker compose restart nginx"
 echo "✅ Nginx restarted"
 
 echo ""
