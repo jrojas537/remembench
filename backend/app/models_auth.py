@@ -6,9 +6,10 @@ Contains User credentials, multi-tenant grouping, and preferences.
 """
 
 import uuid
+import secrets
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -47,6 +48,13 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan"
     )
+    
+    # Webhook subscriptions
+    webhooks = relationship(
+        "WebhookSubscription",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
 
 
 class UserPreference(Base):
@@ -70,3 +78,31 @@ class UserPreference(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", back_populates="preferences")
+
+
+class WebhookSubscription(Base):
+    """
+    Subscribes a user to active API pushes when impact events exceed their severity thresholds.
+    """
+    __tablename__ = "webhook_subscriptions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False
+    )
+    
+    url = Column(String(1024), nullable=False)
+    name = Column(String(255), nullable=False)
+    min_severity = Column(Float, default=0.7, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    
+    # Secret token to sign payloads (HMAC) so users can verify it physically came from Remembench
+    secret_token = Column(String(64), default=lambda: secrets.token_urlsafe(32), nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="webhooks")

@@ -112,6 +112,7 @@ def run_nightly_ingestion(self):
     """
     from app.industries import INDUSTRIES
     from app.services import IngestionService
+    from app.services.webhooks import broadcast_anomalies
     from app.database import async_session_factory
 
     now = datetime.now(timezone.utc)
@@ -135,8 +136,10 @@ def run_nightly_ingestion(self):
                             longitude=market.longitude,
                             geo_label=market.geo_label,
                         )
-                        results.append(result)
+                        results.extend(result)
                 await db.commit()
+                if results:
+                    await broadcast_anomalies(db, results)
             except Exception:
                 await db.rollback()
                 raise
@@ -168,6 +171,7 @@ def run_weekly_deep_sync(self):
     """
     from app.industries import INDUSTRIES
     from app.services import IngestionService
+    from app.services.webhooks import broadcast_anomalies
     from app.database import async_session_factory
 
     now = datetime.now(timezone.utc)
@@ -189,8 +193,10 @@ def run_weekly_deep_sync(self):
                             longitude=market.longitude,
                             geo_label=market.geo_label,
                         )
-                        results.append(result)
+                        results.extend(result)
                 await db.commit()
+                if results:
+                    await broadcast_anomalies(db, results)
             except Exception:
                 await db.rollback()
                 raise
@@ -223,6 +229,7 @@ def run_historical_backfill(
     """
     from app.industries import get_industry
     from app.services import IngestionService
+    from app.services.webhooks import broadcast_anomalies
     from app.database import async_session_factory
 
     start = datetime.fromisoformat(start_date)
@@ -256,8 +263,10 @@ def run_historical_backfill(
                         longitude=market.longitude if market.longitude != 0.0 else None,
                         geo_label=market.geo_label,
                     )
-                    results.append(result)
+                    results.extend(result)
                 await db.commit()
+                if results:
+                    await broadcast_anomalies(db, results)
             except Exception:
                 await db.rollback()
                 raise
@@ -287,6 +296,7 @@ def run_live_ingestion(
     a live dashboard refresh, preventing HTTP blocking on LLM queries.
     """
     from app.services import IngestionService
+    from app.services.webhooks import broadcast_anomalies
     from app.database import async_session_factory
 
     start = datetime.fromisoformat(start_date)
@@ -306,6 +316,8 @@ def run_live_ingestion(
                     geo_label=geo_label,
                 )
                 await db.commit()
+                if result:
+                    await broadcast_anomalies(db, result)
                 return result
             except Exception:
                 await db.rollback()

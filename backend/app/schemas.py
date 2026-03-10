@@ -242,3 +242,41 @@ class ExecutiveBriefing(BaseModel):
 
 class AIBriefingResponse(BaseModel):
     briefing: ExecutiveBriefing
+
+# --------------------------------------------------------------------------- #
+#  Webhook Subscriptions
+# --------------------------------------------------------------------------- #
+
+class WebhookCreate(BaseModel):
+    """
+    Client request schema to register a new webhook destination.
+    """
+    url: str = Field(..., max_length=1024, description="The destination HTTPS URL to push alerts.")
+    name: str = Field(..., max_length=255, description="Human-readable name for this webhook (e.g., 'Slack #marketing').")
+    min_severity: float = Field(0.7, ge=0.0, le=1.0, description="Minimum severity threshold to trigger a notification.")
+    is_active: bool = Field(True, description="Whether this webhook is currently listening.")
+
+class WebhookResponse(WebhookCreate):
+    """
+    API response schema returning the webhook configuration including its unique secret.
+    """
+    id: uuid.UUID
+    user_id: uuid.UUID
+    secret_token: str = Field(..., description="HMAC signing secret to verify the payload originated from Remembench.")
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+class WebhookEventPayload(BaseModel):
+    """
+    The exact JSON structure that Remembench transmits outwards to the destination URL.
+    """
+    event_id: uuid.UUID
+    title: str
+    category: str
+    severity: float
+    confidence: float
+    market: str | None
+    industry: str
+    timestamp: str

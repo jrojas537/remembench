@@ -131,7 +131,7 @@ async def add_security_headers(request, call_next):
     return response
 
 # --- Route Registration ---
-from app.routes import auth, users, billing, impact_events, yoy_comparison, ingestion, health, industries  # noqa: E402
+from app.routes import auth, users, billing, impact_events, yoy_comparison, ingestion, health, industries, webhooks  # noqa: E402
 from app.api.v1 import agent
 
 app.include_router(
@@ -173,6 +173,11 @@ app.include_router(
     industries.router,
     prefix=f"{settings.api_prefix}/industries",
     tags=["Industries"],
+)
+app.include_router(
+    webhooks.router,
+    prefix=f"{settings.api_prefix}/webhooks",
+    tags=["Webhooks"],
 )
 app.include_router(
     health.router,
