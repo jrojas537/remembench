@@ -42,6 +42,8 @@ python-jose[cryptography]>=3.4.0
 python-dateutil==2.9.0.post0
 structlog==24.4.0
 tenacity==9.0.0
+slowapi>=0.1.9
+greenlet>=3.0.0
 # Authentication
 bcrypt==4.3.0
 passlib[bcrypt]==1.7.4
