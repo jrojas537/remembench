@@ -1,11 +1,23 @@
-# ⚡ Remembench
+# ⚡ Remembench (v1.0.0 Stable Core)
 
 **YoY Performance Context Engine** — Surfaces weather, promotions, holidays, events, and disruptions that influence business performance in specific industries, markets, and date ranges.
 
+[![Version: v1.0.0](https://img.shields.io/badge/Version-v1.0.0--Stable-success.svg)](#)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
+
+## What is in V1.0.0?
+
+The `V1` branch represents the first fully stable, production-ready iteration of the Remembench core engine. 
+*   **Decoupled Architecture:** Solidified Next.js 16 frontend and FastAPI Python backend, communicating via REST.
+*   **Automated Ingestion Pipeline:** Celery Beat orchestration successfully integrating Open-Meteo, NOAA CDO, GDELT global news, specialized industry RSS feeds, and native `python-holidays` computations.
+*   **Intelligent Deduplication Engine:** Integrated semantic deduplication via local `SentenceTransformers` and rapid LLM batch classification via Anthropic Claude.
+*   **Fully Documented Codebase:** 100% of major Python backend functions and Next.js frontend components are fully documented with docstrings/JSDoc type hinting.
+*   **Robust Testing:** Over 100 passing `pytest` unit/integration tests confirming mathematical safety, bounding logic, and LLM retry resilience.
 
 ---
 

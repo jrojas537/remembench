@@ -1,6 +1,6 @@
-# Remembench Architecture
+# Remembench Architecture (v1.0.0 Stable)
 
-This document provides a comprehensive overview of the Remembench system architecture, its core components, and the data flows that power the YoY Context Engine.
+This document provides a comprehensive overview of the Remembench v1.0.0 system architecture, its core components, and the data flows that power the YoY Context Engine.
 
 ---
 
