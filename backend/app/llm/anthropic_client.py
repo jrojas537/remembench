@@ -24,7 +24,7 @@ class AnthropicClient(BaseLLMClient):
             
         response = await self.client.messages.create(
             model=self.model,
-            max_tokens=1024,
+            max_tokens=4096,
             temperature=0.0,
             system=system,
             messages=messages
