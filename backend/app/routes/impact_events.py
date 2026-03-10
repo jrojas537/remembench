@@ -179,14 +179,14 @@ async def event_stats(
 
 @router.post("/briefing", response_model=AIBriefingResponse, dependencies=[Depends(get_current_user)])
 @limiter.limit("5/minute")
-async def get_executive_briefing(request_obj: Request, request: AIBriefingRequest) -> dict:
+async def get_executive_briefing(request: Request, payload: AIBriefingRequest) -> dict:
     """
     Generate an AI Executive Briefing from a list of events natively structured in JSON.
     """
     from app.services.classification import ClassificationService
     classifier = ClassificationService()
     
-    briefing_payload = await classifier.generate_executive_briefing(request.events, request.industry)
+    briefing_payload = await classifier.generate_executive_briefing(payload.events, payload.industry)
     return {"briefing": briefing_payload}
 
 @router.get("/{event_id}", response_model=ImpactEventResponse, dependencies=[Depends(get_current_user)])
