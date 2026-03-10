@@ -8,7 +8,9 @@ set -e
 VPS_USER="webapp"
 VPS_HOST="187.77.4.109"
 VPS_DIR="~/Remembench"
-VPS_PASS="***REDACTED***"
+# Password should be provided via environment variable, never hardcoded.
+# Usage: VPS_PASS="your_password" ./deploy.sh
+VPS_PASS="${VPS_PASS}"
 COMMIT_MSG="${1:-deploy: update $(date '+%Y-%m-%d %H:%M')}"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
