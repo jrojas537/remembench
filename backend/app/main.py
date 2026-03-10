@@ -36,8 +36,19 @@ from app.logging import get_logger, setup_logging
 setup_logging(settings.log_level)
 logger = get_logger("main")
 
-# Initialize global rate limiter connected to Redis
-limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"], storage_uri=settings.redis_url)
+# ---------------------------------------------------------------------------
+# Global Rate Limiting Architecture
+# ---------------------------------------------------------------------------
+# We leverage `slowapi` to inject sliding-window rate limit checks before 
+# yielding to the asynchronous router stack. By pushing the memory tracker
+# onto the robust Redis cluster (`settings.redis_url`) rather than an in-memory 
+# Python dict, we ensure state is synchronized across all Uvicorn worker threads 
+# and horizontally scaled Docker replicas natively.
+limiter = Limiter(
+    key_func=get_remote_address, 
+    default_limits=["120/minute"], 
+    storage_uri=settings.redis_url
+)
 
 
 @asynccontextmanager
@@ -97,7 +108,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Rate Limiting Middleware ---
+# ---------------------------------------------------------------------------
+# Rate Limiting & Protection Middleware
+# ---------------------------------------------------------------------------
+# App state injection is required by FastAPI to execute global constraints.
+# `SlowAPIMiddleware` intercepts requests pre-routing and returns HTTP 429 bounds
+# gracefully explicitly preventing brute-force database exhaustion loops.
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)

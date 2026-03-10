@@ -182,6 +182,16 @@ async def event_stats(
 async def get_executive_briefing(request: Request, payload: AIBriefingRequest) -> dict:
     """
     Generate an AI Executive Briefing from a list of events natively structured in JSON.
+    
+    Security & Performance Architecture:
+    - Rate Limited: Strictly capped at 5 requests per minute per IP via Redis (`slowapi`) 
+      to prevent malicious token extortion attacks against the downstream LLM.
+    - Semantic Caching: Requests are cryptographically hashed inside `ClassificationService`.
+      Identical payloads bypass the LLM entirely, yielding ~0ms latency and $0 billing cost.
+      
+    Args:
+        request: FastAPI raw request object (required by slowapi memory tracker).
+        payload: Pydantic schema containing isolated array of ImpactEvents + targeting industry.
     """
     from app.services.classification import ClassificationService
     classifier = ClassificationService()

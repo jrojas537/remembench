@@ -148,14 +148,23 @@ async def compare_yoy(
     start_date: datetime = Query(..., description="Start of the target period"),
     end_date: datetime = Query(..., description="End of the target period"),
     lookback_years: int = Query(1, ge=1, le=5, description="Years to look back"),
-    geo_label: str | None = Query(None, description="Filter by market name"),
-    categories: list[str] | None = Query(None, description="Filter by categories"),
+    geo_label: str | None = Query(None, description="Optional market filter"),
+    categories: list[str] | None = Query(None, description="Categories to include"),
     industry: str = Query("wireless_retail", description="Industry vertical"),
     db: AsyncSession = Depends(get_db),
 ) -> YoYComparisonResponse:
     """
-    Compare impact events for a date range against prior years.
-
+    Execute a complex geospatial Year-Over-Year (YoY) event aggregation.
+    
+    Security & Performance Architecture:
+    - Rate Limited: Capped at 30 requests per minute per IP via Redis (`slowapi`).
+      This ceiling explicitly protects PostgreSQL from connection starvation caused 
+      by aggressive multi-year bounding queries across massive historical datasets.
+    
+    Calculates the exact temporal equivalent of the requested date range for previous 
+    years, aggregates semantic event overlaps, and computes significance deltas 
+    (e.g., "3 more competitor promos this year compared to last year").
+    
     Example: comparing Feb 1-28 2025 against Feb 1-28 2024 for the
     Detroit pizza market. If there was a major blizzard in 2024 but
     not 2025, that context helps explain why sales are up this year.

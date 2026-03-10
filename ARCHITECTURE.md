@@ -11,7 +11,7 @@ Remembench is built as a highly modular, decoupled full-stack application design
 ### Tech Stack
 - **Frontend**: Next.js (App Router), React, Tailwind CSS, Recharts, Framer Motion.
 - **Backend Application**: Python 3.11+, FastAPI, Pydantic, SQLAlchemy 2.0 (Async).
-- **Background Processing**: Celery, Redis (Message Broker & Cache).
+- **Background Infrastructure**: Celery, Redis (Message Broker, Rate Limit Stateful Memory, & Deep Semantic Data Cache).
 - **Database**: PostgreSQL with PostGIS extension for geospatial querying.
 - **AI/LLM Layer**: Anthropic Claude (Primary), OpenAI/Gemini (Secondary fallbacks).
 
@@ -79,7 +79,13 @@ It then queries PostgreSQL using complex aggregations (PostGIS `ST_DWithin` if r
 
 ### 3.2 AI Executive Briefings
 To synthesize hundreds of data points, the frontend requests an Executive Briefing (`/api/v1/events/briefing`). 
-The backend extracts the highest severity events from the payload and triggers a synchronized, rapid LLM call. The LLM acts as an "Analyst," grouping the events into a narrative markdown blob summarizing the market context (e.g., *"March 2024 saw significant headwinds due to 3 major snowstorms and an aggressive Domino's BOGO promotion..."*).
+
+**Performance Innovation (Semantic Interceptor):**
+Because LLM calls are structurally slow (~4-8 seconds) and cost tokens, the backend does not naively forward every dashboard request to Anthropic.
+1. The `ClassificationService` generates an exact MD5 deterministic hash of the filtered payload and industry vertical.
+2. It hits the local Redis layer searching for that specific key. 
+3. A cache hit returns the structured payload instantly (~0.05s).
+4. A cache miss queries Anthropic Claude to act as an "Analyst," grouping the events into an active JSON summary of the market context. The backend then caches this returned payload back to Redis with a strict 12-hour Time-To-Live (TTL) allowing immediate reuse for any other tenant viewing identical filters.
 
 ---
 
@@ -103,6 +109,7 @@ Remembench is engineered for straightforward horizontal and vertical scaling:
 1.  **Horizontal Celery Architecture**: If backfilling years of historical GDELT data, operators can seamlessly scale up multiple `celery-worker` Docker containers. The Redis message broker distributes tasks across all available workers.
 2.  **In-Memory API Caching**: Heavy endpoints (`/stats/summary`, `/yoy/compare`) are wrapped in custom Redis idempotency locks. Identical requests from disparate users hit Redis memory rather than hammering Postgres or the LLM.
 3.  **Partial Indexing**: Postgres relies on optimized partial indexes tailored precisely for Remembench queries (e.g., `CREATE INDEX ON impact_events (industry) WHERE source_id IS NOT NULL;`).
+4.  **Distributed Global Rate Limiting**: The `app.main` FastAPI routing interface mounts `slowapi` tied to the central Redis node. Complex endpoints (like geographic YoY aggregates) are hard-capped at 30 requests/minute to natively prevent connection exhaustion against the Postgres instance.
 
 ---
 

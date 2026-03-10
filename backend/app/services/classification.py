@@ -159,16 +159,20 @@ Each object in the array must match this schema:
         """
         Synthesizes a high-level strategic executive brief based on recent historically extracted data.
         
-        To protect the LLM context window limits and control API billing costs, this method
-        explicitly slices the payload array limiting context to the top 50 recent events.
-        It parses the semantic titles and descriptions instead of the entire raw payloads.
+        Performance Architecture & Semantic Caching:
+        - Context Optimization: Explicitly slices the array to the Top 50 recent events, parsing 
+          only semantic titles/descriptions to protect LLM context windows bounds.
+        - Idempotent Interceptor: A deterministic MD5 hash of the payload + industry creates a unique fingerprint.
+        - Zero-Latency Cache: Bypasses network I/O and Anthropic token generation synchronously returning 
+          responses from Redis for repeated dashboard views.
+        - Expiration: Cache items inherit an automated 12-hour TTL (`EX=43200`) retaining market freshness.
         
         Args:
             events: List of fully classified events mapped from the primary DB fetch.
-            industry: Target vertical.
+            industry: Target vertical context controlling the internal system prompt orientation.
             
         Returns:
-            dict: The executive synthesis JSON including sentiment, threat scores, and actions.
+            dict: The executive synthesis JSON including sentiment, threat scores, and macro trends.
         """
         if not events:
             return {
