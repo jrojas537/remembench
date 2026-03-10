@@ -52,6 +52,20 @@ export default function TopNav() {
                                     Signed in as <strong>{user.first_name || user.email}</strong>
                                 </span>
                             </div>
+                            <Link
+                                href="/settings"
+                                style={{
+                                    background: "var(--color-bg-tertiary)", border: "1px solid var(--color-border-default)",
+                                    padding: "var(--space-2) var(--space-3)", borderRadius: "var(--radius-sm)",
+                                    color: "var(--color-text-secondary)", cursor: "pointer", fontSize: "var(--font-size-xs)",
+                                    fontWeight: 500, transition: "var(--transition-fast)", textDecoration: "none"
+                                }}
+                                onMouseEnter={(e) => e.target.style.background = "var(--color-bg-secondary)"}
+                                onMouseLeave={(e) => e.target.style.background = "var(--color-bg-tertiary)"}
+                            >
+                                Integrations / API
+                            </Link>
+
                             <button
                                 onClick={() => setShowSettings(true)}
                                 style={{
