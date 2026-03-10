@@ -92,45 +92,18 @@ class WebSearchAdapter(BaseAdapter):
         )
         
         raw_results = []
-        
-        # 1. Try Tavily (Best structured output for LLMs)
-        if self.tavily_client:
-            try:
-                # Add Tier 3: HTTP Adapter level caching
-                import json
-                from app.cache import get_redis
-                redis_pool = get_redis()
-                rd = await anext(redis_pool)
-                tavily_cache_key = f"tavily:search:{hashlib.md5(query.encode()).hexdigest()}"
-                
-                cached = await rd.get(tavily_cache_key)
-                if cached:
-                    logger.info(f"Tavily Cache HIT for: {query}")
-                    response = json.loads(cached)
-                else:
-                    logger.info(f"Attempting Tavily search for: {query}")
-                    response = await self.tavily_client.search(
-                        query=query, 
-                        search_depth="advanced",
-                        max_results=limit,
-                        include_answer=False
-                    )
-                    # Cache successful Tavily payloads for 2 weeks to suppress redundant billing
-                    await rd.setex(tavily_cache_key, 1209600, json.dumps(response))
-                
-                for res in response.get("results", []):
-                    raw_results.append({
-                        "network": "tavily",
-                        "original_text": f"Title: {res.get('title')}\nContent: {res.get('content')}",
-                        "url": res.get("url"),
-                        "market": market,
-                        "industry": industry
-                    })
-            except Exception as e:
-                logger.warning(f"Tavily search failed, falling back to Exa: {str(e)}")
+        now = datetime.now()
+        is_historical = (now - end_date).days > 30
 
-        # 2. Try Exa if Tavily failed to find anything or crashed
-        if not raw_results and self.exa_client:
+        logger.info(f"Routing WebSearch: query='{query}' is_historical={is_historical}")
+
+        # ---------------------------------------------------------------------
+        # Tier 1 & 2 Router (Historical vs Recent)
+        # Exa is uniquely capable of strict historical chronological bounding.
+        # Tavily is profoundly superior for recent/live data structuring for LLMs.
+        # ---------------------------------------------------------------------
+
+        async def _run_exa():
             try:
                 import json
                 from app.cache import get_redis
@@ -155,7 +128,6 @@ class WebSearchAdapter(BaseAdapter):
                         lambda: self.exa_client.search_and_contents(
                             query,
                             num_results=limit,
-                            use_autoprompt=True,
                             start_published_date=start_str,
                             end_published_date=end_str
                         )
@@ -173,8 +145,51 @@ class WebSearchAdapter(BaseAdapter):
                         "industry": industry
                     })
             except Exception as e:
-                logger.warning(f"Exa search failed, falling back to DDG: {str(e)}")
+                logger.warning(f"Exa search failed: {str(e)}")
 
+        async def _run_tavily():
+            try:
+                import json
+                from app.cache import get_redis
+                redis_pool = get_redis()
+                rd = await anext(redis_pool)
+                tavily_cache_key = f"tavily:search:{hashlib.md5(query.encode()).hexdigest()}"
+                
+                cached = await rd.get(tavily_cache_key)
+                if cached:
+                    logger.info(f"Tavily Cache HIT for: {query}")
+                    response = json.loads(cached)
+                else:
+                    logger.info(f"Attempting Tavily search for: {query}")
+                    response = await self.tavily_client.search(
+                        query=query, 
+                        search_depth="advanced",
+                        max_results=limit,
+                        include_answer=False
+                    )
+                    await rd.setex(tavily_cache_key, 1209600, json.dumps(response))
+                
+                for res in response.get("results", []):
+                    raw_results.append({
+                        "network": "tavily",
+                        "original_text": f"Title: {res.get('title')}\nContent: {res.get('content')}",
+                        "url": res.get("url"),
+                        "market": market,
+                        "industry": industry
+                    })
+            except Exception as e:
+                logger.warning(f"Tavily search failed: {str(e)}")
+
+        # Dispatch Route priority
+        if is_historical and self.exa_client:
+            await _run_exa()
+            if not raw_results and self.tavily_client:
+                await _run_tavily()
+        else:
+            if self.tavily_client:
+                await _run_tavily()
+            if not raw_results and self.exa_client:
+                await _run_exa()
         # 3. DuckDuckGo fallback — synchronous, run in executor
         if not raw_results and self.has_ddgs:
             try:
