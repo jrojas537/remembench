@@ -1,7 +1,7 @@
 import json
 import hashlib
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 
 from app.adapters.base import BaseAdapter
@@ -92,7 +92,7 @@ class WebSearchAdapter(BaseAdapter):
         )
         
         raw_results = []
-        now = datetime.now()
+        now = datetime.now(end_date.tzinfo) if end_date.tzinfo else datetime.now()
         is_historical = (now - end_date).days > 30
 
         logger.info(f"Routing WebSearch: query='{query}' is_historical={is_historical}")
