@@ -99,8 +99,10 @@ class WebSearchAdapter(BaseAdapter):
 
         # ---------------------------------------------------------------------
         # Tier 1 & 2 Router (Historical vs Recent)
-        # Exa is uniquely capable of strict historical chronological bounding.
-        # Tavily is profoundly superior for recent/live data structuring for LLMs.
+        # Exa Neural Search is uniquely capable of strict historical chronological bounding 
+        # for events that bypass traditional index recency (e.g. > 30 days old). 
+        # Tavily is profoundly superior for recent/live data structuring and NLP comprehension.
+        # The logic dynamically prioritizes the appropriate SDK based on the search_date trajectory.
         # ---------------------------------------------------------------------
 
         async def _run_exa():

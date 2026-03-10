@@ -24,7 +24,7 @@ The `V1` branch represents the first fully stable, production-ready iteration of
 
 Remembench answers the critical data science question: **"What external context drove this sudden performance delta?"**
 
-It asynchronously scrapes noisy internet data—weather sensors, RSS alerts, news scraping APIs, web-searches—and normalizes it via local embeddings and Anthropic Claude LLM into a highly structured `ImpactEvent` topology.
+It asynchronously scrapes noisy internet data—weather sensors, RSS alerts, news scraping APIs, semantic web-searches via Exa and Tavily—and normalizes it via local embeddings and Anthropic Claude 3 Haiku LLM into a highly structured `ImpactEvent` topology.
 
 By mapping previously abstract data points into hard analytical numbers (e.g. *Severity: 0.8*, *Category: Competitor Promotion*), operators can isolate noise from their raw YoY metric curves in an interactive Next.js dashboard.
 
@@ -164,7 +164,9 @@ npm install && npm run dev
 | **NOAA CDO** | Yes (free) | US weather stations | US, daily |
 | **GDELT Project** | No | Global news + events | Global, real-time |
 | **RSS Feeds** | No | Industry news (carrier/restaurant) | Per-industry |
-| **Abstract API** | Yes (free) | Public holidays | Global, annual |
+| **Exa Search** | Yes | Neural historical web search & events | Global |
+| **Tavily** | Yes | Live search & LLM-optimized parsing | Global, live |
+| **Abstract API** | Yes | Public holidays (deprecated to native) | Global, annual |
 
 ---
 

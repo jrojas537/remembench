@@ -13,7 +13,7 @@ Remembench is built as a highly modular, decoupled full-stack application design
 - **Backend Application**: Python 3.11+, FastAPI, Pydantic, SQLAlchemy 2.0 (Async).
 - **Background Infrastructure**: Celery, Redis (Message Broker, Rate Limit Stateful Memory, & Deep Semantic Data Cache).
 - **Database**: PostgreSQL with PostGIS extension for geospatial querying.
-- **AI/LLM Layer**: Anthropic Claude (Primary), OpenAI/Gemini (Secondary fallbacks).
+- **AI/LLM Layer**: Anthropic Claude 3 Haiku (Primary JSON Parser), OpenAI/Gemini (Secondary fallbacks).
 
 ### Infrastructure Topology
 The standard production deployment is containerized via Docker Compose. Traffic flows through an Nginx reverse proxy which routes requests to the Next.js frontend or the FastAPI backend based on the URL path.
@@ -47,6 +47,7 @@ All adapters conform to the `BaseAdapter` interface, which includes built-in exp
 
 *   **Structured Adapters**: Data is already highly normalized. (e.g., `OpenMeteoAdapter`, `HolidayAdapter`). Bypass expensive LLM processes. The `HolidayAdapter` specifically leverages the offline mathematical `python-holidays` library to generate exact regional/federal observations natively without requiring slow, unstable API connections.
 *   **Unstructured Adapters**: Return raw text or noisy HTML. (e.g., `GdeltAdapter`, `WebSearchAdapter`, `IndustryRssAdapter`).
+    *   **Tiered Routing Strategy**: The `WebSearchAdapter` employs intelligent API routing. It delegates to *Tavily* for recent events requiring deep, structured NLP content, but strategically falls back to *Exa Neural Search* to bypass recency bias and force strict chronological bounding for events >30 days old.
 
 ### 2.2 Transformation & Deduplication
 Because Remembench ingests overlapping data (e.g., a news article from GDELT might also appear in a Google Web Search), it employs a multi-tiered deduplication strategy:
@@ -59,7 +60,7 @@ Because Remembench ingests overlapping data (e.g., a news article from GDELT mig
 Unstructured events that survive deduplication are routed to the `ClassificationService`.
 To heavily optimize token costs and throughput, events are packaged into batches (configurable size, typically 10) and sent via asynchronous semaphores to the LLM. 
 
-The LLM (Anthropic Claude by default) is mandated to reply in a strict JSON schema, which:
+The LLM (Anthropic Claude 3 Haiku by default) is configured with `max_tokens=4096` and mandated via system prompt prefilling to return a strict `JSON Array` schema, which:
 *   Identifies the category and subcategory.
 *   Assigns a `Severity` score (0.0 to 1.0) dictating the event's business disruption magnitude.
 *   Assigns a `Confidence` score (0.0 to 1.0).
