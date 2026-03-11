@@ -215,7 +215,7 @@ class GdeltAdapter(BaseAdapter):
             if any(kw in title_lower for kw in ["minimum wage", "labor shortage", "restaurant workers"]):
                 return "labor", "staffing"
             if any(kw in title_lower for kw in ["promotion", "deal", "offer", "discount", "special"]):
-                return "competitor_promo", "restaurant_promotion"
+                return "pizza_promotions", "restaurant_promotion"
 
         # Phase 3: Hardware / Wireless Retail constraints
         if industry == "wireless_retail":

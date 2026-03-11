@@ -235,7 +235,7 @@ class IndustryRssAdapter(BaseAdapter):
             if any(kw in combined for kw in _SUPPLY_CHAIN_KEYWORDS):
                 return "supply_chain", "cost_or_shortage"
             if any(kw in combined for kw in _RESTAURANT_PROMO_KEYWORDS):
-                return "competitor_promo", "restaurant_promotion"
+                return "pizza_promotions", "restaurant_promotion"
             # General restaurant news is still useful
             return "news", "industry_news"
 

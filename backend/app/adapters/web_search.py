@@ -80,7 +80,10 @@ class WebSearchAdapter(BaseAdapter):
         """
         limit = 15
         market = geo_label if geo_label else "Unknown"
+        from datetime import timedelta
         start_str = start_date.strftime("%Y-%m-%d")
+        # Look back 90 days to catch articles announcing ongoing promos
+        oxa_start_str = (start_date - timedelta(days=90)).strftime("%Y-%m-%d")
         end_str = end_date.strftime("%Y-%m-%d")
         year = start_date.year
 
@@ -130,7 +133,7 @@ class WebSearchAdapter(BaseAdapter):
                         lambda: self.exa_client.search_and_contents(
                             query,
                             num_results=limit,
-                            start_published_date=start_str,
+                            start_published_date=oxa_start_str,
                             end_published_date=end_str
                         )
                     )

@@ -1,0 +1,2503 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Remembench",
+    "description": "Remembench \u2014 YoY Performance Context Engine. Surfaces weather, promotions, holidays, events, and disruptions that impact specific industries, markets, and date ranges.",
+    "version": "0.2.0"
+  },
+  "paths": {
+    "/api/v1/agent/anomalies": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Token-optimized anomaly search for AI Agents",
+        "description": "Highly compressed endpoint specifically built for LLM/Agent consumption.\nStrips raw JSON payloads and metadata to save token space in the context window.",
+        "operationId": "get_anomalies_api_v1_agent_anomalies_get",
+        "parameters": [
+          {
+            "name": "industry",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Target industry slug (e.g. 'wireless_retail', 'pizza_full_service')",
+              "title": "Industry"
+            },
+            "description": "Target industry slug (e.g. 'wireless_retail', 'pizza_full_service')"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Start date YYYY-MM-DD",
+              "title": "Start Date"
+            },
+            "description": "Start date YYYY-MM-DD"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "End date YYYY-MM-DD",
+              "title": "End Date"
+            },
+            "description": "End date YYYY-MM-DD"
+          },
+          {
+            "name": "market",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional specific market (e.g., 'New York City')",
+              "title": "Market"
+            },
+            "description": "Optional specific market (e.g., 'New York City')"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "description": "Max results (capped at 200)",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max results (capped at 200)"
+          },
+          {
+            "name": "detail_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "'low' returns just a bullet point summary. 'high' returns the full text schema.",
+              "default": "low",
+              "title": "Detail Level"
+            },
+            "description": "'low' returns just a bullet point summary. 'high' returns the full text schema."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent/anomaly/{event_id}": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Fetch full descriptive payload for a single event",
+        "description": "Agent Drill-Down tool. After an agent identifies an interesting event using `detail_level=low`,\nit can fetch the full descriptive payload here.",
+        "operationId": "get_anomaly_details_api_v1_agent_anomaly__event_id__get",
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register User",
+        "description": "Register a new user.\nCreates a new user account and sets up empty default preferences.",
+        "operationId": "register_user_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login For Access Token",
+        "description": "Authenticate user and return a JWT token.\nUses JSON body `email` and `password` inside `UserLogin`.",
+        "operationId": "login_for_access_token_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Read Users Me",
+        "description": "Get the currently authenticated user's profile and preferences.",
+        "operationId": "read_users_me_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/preferences": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update User Preferences",
+        "description": "Update the authenticated user's preferences (like default industry and market).",
+        "operationId": "update_user_preferences_api_v1_users_me_preferences_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPreferenceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferenceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/billing/create-checkout-session": {
+      "post": {
+        "tags": [
+          "Billing",
+          "Billing"
+        ],
+        "summary": "Create Checkout",
+        "description": "Generate a linked Stripe checkout URL to upgrade a user's subscription tier.",
+        "operationId": "create_checkout_api_v1_billing_create_checkout_session_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lookup_key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lookup Key"
+            }
+          },
+          {
+            "name": "success_url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Success Url"
+            }
+          },
+          {
+            "name": "cancel_url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cancel Url"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/create-portal-session": {
+      "post": {
+        "tags": [
+          "Billing",
+          "Billing"
+        ],
+        "summary": "Create Portal",
+        "description": "Generate a link for a user to manage their active Stripe subscription.",
+        "operationId": "create_portal_api_v1_billing_create_portal_session_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "return_url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Return Url"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/webhook": {
+      "post": {
+        "tags": [
+          "Billing",
+          "Billing"
+        ],
+        "summary": "Stripe Webhook",
+        "description": "Listen to server-to-server webhook events dispatched from Stripe to sync our internal database state.",
+        "operationId": "stripe_webhook_api_v1_billing_webhook_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/": {
+      "post": {
+        "tags": [
+          "Impact Events"
+        ],
+        "summary": "Create Event",
+        "description": "Create a new impact event.\n\nTypically called by adapters during ingestion, not by end users.\nIf latitude/longitude are provided, a PostGIS point is created\nfor spatial queries.",
+        "operationId": "create_event_api_v1_events__post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImpactEventCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactEventResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Impact Events"
+        ],
+        "summary": "List Events",
+        "description": "List impact events with optional filters.\n\nReturns events sorted by date (newest first) for the specified\nindustry. Supports filtering by category, source, market, and date range.",
+        "operationId": "list_events_api_v1_events__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by impact category",
+              "title": "Category"
+            },
+            "description": "Filter by impact category"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by data source",
+              "title": "Source"
+            },
+            "description": "Filter by data source"
+          },
+          {
+            "name": "geo_label",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by market name (partial match)",
+              "title": "Geo Label"
+            },
+            "description": "Filter by market name (partial match)"
+          },
+          {
+            "name": "industry",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Industry vertical",
+              "default": "wireless_retail",
+              "title": "Industry"
+            },
+            "description": "Industry vertical"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter events on or after this date",
+              "title": "Start Date"
+            },
+            "description": "Filter events on or after this date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter events on or before this date",
+              "title": "End Date"
+            },
+            "description": "Filter events on or before this date"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Max results to return",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Max results to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Pagination offset",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Pagination offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImpactEventResponse"
+                  },
+                  "title": "Response List Events Api V1 Events  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/stats/summary": {
+      "get": {
+        "tags": [
+          "Impact Events"
+        ],
+        "summary": "Event Stats",
+        "description": "Get summary statistics of impact events per category.",
+        "operationId": "event_stats_api_v1_events_stats_summary_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "industry",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Industry vertical",
+              "default": "wireless_retail",
+              "title": "Industry"
+            },
+            "description": "Industry vertical"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter events on or after this date",
+              "title": "Start Date"
+            },
+            "description": "Filter events on or after this date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter events on or before this date",
+              "title": "End Date"
+            },
+            "description": "Filter events on or before this date"
+          },
+          {
+            "name": "geo_label",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by market name (includes National)",
+              "title": "Geo Label"
+            },
+            "description": "Filter by market name (includes National)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Event Stats Api V1 Events Stats Summary Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/briefing": {
+      "post": {
+        "tags": [
+          "Impact Events"
+        ],
+        "summary": "Get Executive Briefing",
+        "description": "Generate an AI Executive Briefing from a list of events natively structured in JSON.\n\nSecurity & Performance Architecture:\n- Rate Limited: Strictly capped at 5 requests per minute per IP via Redis (`slowapi`) \n  to prevent malicious token extortion attacks against the downstream LLM.\n- Semantic Caching: Requests are cryptographically hashed inside `ClassificationService`.\n  Identical payloads bypass the LLM entirely, yielding ~0ms latency and $0 billing cost.\n  \nArgs:\n    request: FastAPI raw request object (required by slowapi memory tracker).\n    payload: Pydantic schema containing isolated array of ImpactEvents + targeting industry.",
+        "operationId": "get_executive_briefing_api_v1_events_briefing_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIBriefingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIBriefingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}": {
+      "get": {
+        "tags": [
+          "Impact Events"
+        ],
+        "summary": "Get Event",
+        "description": "Retrieve a single impact event by its UUID.",
+        "operationId": "get_event_api_v1_events__event_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactEventResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/yoy/compare": {
+      "get": {
+        "tags": [
+          "YoY Comparison"
+        ],
+        "summary": "Compare Yoy",
+        "description": "Execute a complex geospatial Year-Over-Year (YoY) event aggregation.\n\nSecurity & Performance Architecture:\n- Rate Limited: Capped at 30 requests per minute per IP via Redis (`slowapi`).\n  This ceiling explicitly protects PostgreSQL from connection starvation caused \n  by aggressive multi-year bounding queries across massive historical datasets.\n\nCalculates the exact temporal equivalent of the requested date range for previous \nyears, aggregates semantic event overlaps, and computes significance deltas \n(e.g., \"3 more competitor promos this year compared to last year\").\n\nExample: comparing Feb 1-28 2025 against Feb 1-28 2024 for the\nDetroit pizza market. If there was a major blizzard in 2024 but\nnot 2025, that context helps explain why sales are up this year.",
+        "operationId": "compare_yoy_api_v1_yoy_compare_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Start of the target period",
+              "title": "Start Date"
+            },
+            "description": "Start of the target period"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "End of the target period",
+              "title": "End Date"
+            },
+            "description": "End of the target period"
+          },
+          {
+            "name": "lookback_years",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 5,
+              "minimum": 1,
+              "description": "Years to look back",
+              "default": 1,
+              "title": "Lookback Years"
+            },
+            "description": "Years to look back"
+          },
+          {
+            "name": "geo_label",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional market filter",
+              "title": "Geo Label"
+            },
+            "description": "Optional market filter"
+          },
+          {
+            "name": "categories",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Categories to include",
+              "title": "Categories"
+            },
+            "description": "Categories to include"
+          },
+          {
+            "name": "industry",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Industry vertical",
+              "default": "wireless_retail",
+              "title": "Industry"
+            },
+            "description": "Industry vertical"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YoYComparisonResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingestion/run": {
+      "post": {
+        "tags": [
+          "Data Ingestion"
+        ],
+        "summary": "Trigger Manual Ingestion",
+        "description": "Manually triggers the overarching intelligence ingestion pipeline for a date range.\n\nIterates through all registered adapters for the vertical, executes remote fetching,\nLLM semantic classification, deduplication dropping, and inserts clean records into PostgreSQL.",
+        "operationId": "run_ingestion_api_v1_ingestion_run_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Start of bounding time-series to ingest",
+              "title": "Start Date"
+            },
+            "description": "Start of bounding time-series to ingest"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "End of bounding time-series to ingest",
+              "title": "End Date"
+            },
+            "description": "End of bounding time-series to ingest"
+          },
+          {
+            "name": "industry",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Designated industry vertical code",
+              "default": "wireless_retail",
+              "title": "Industry"
+            },
+            "description": "Designated industry vertical code"
+          },
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 90.0,
+                  "minimum": -90.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Spatial core bounding reference",
+              "title": "Latitude"
+            },
+            "description": "Spatial core bounding reference"
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "maximum": 180.0,
+                  "minimum": -180.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Spatial core bounding reference",
+              "title": "Longitude"
+            },
+            "description": "Spatial core bounding reference"
+          },
+          {
+            "name": "geo_label",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Human readable market name",
+              "title": "Geo Label"
+            },
+            "description": "Human readable market name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A statistical dictionary block confirming database inserts and fetched source volume.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Run Ingestion Api V1 Ingestion Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingestion/task/{task_id}": {
+      "get": {
+        "tags": [
+          "Data Ingestion"
+        ],
+        "summary": "Check Task Status",
+        "description": "Check the status of an asynchronous ingestion task.",
+        "operationId": "get_task_status_api_v1_ingestion_task__task_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Task Status Api V1 Ingestion Task  Task Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingestion/backfill": {
+      "post": {
+        "tags": [
+          "Data Ingestion"
+        ],
+        "summary": "Schedule Historical Backfill",
+        "description": "Triggers a massive asynchronous historical backfill ingestion job via Celery.\n\nReturns immediately with a trackable job ID pointing to the detached worker queue.",
+        "operationId": "trigger_backfill_api_v1_ingestion_backfill_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ISO 8601 date string (e.g. 2024-01-01)",
+              "title": "Start Date"
+            },
+            "description": "ISO 8601 date string (e.g. 2024-01-01)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ISO 8601 date string (e.g. 2024-12-31)",
+              "title": "End Date"
+            },
+            "description": "ISO 8601 date string (e.g. 2024-12-31)"
+          },
+          {
+            "name": "industry",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Industry vertical target",
+              "default": "wireless_retail",
+              "title": "Industry"
+            },
+            "description": "Industry vertical target"
+          },
+          {
+            "name": "geo_label",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Specific local market constraint",
+              "title": "Geo Label"
+            },
+            "description": "Specific local market constraint"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A task dictionary containing the async Celery job ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Trigger Backfill Api V1 Ingestion Backfill Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/industries/": {
+      "get": {
+        "tags": [
+          "Industries"
+        ],
+        "summary": "List Industries",
+        "description": "Return all configured industries grouped by vertical.\n\nUsed by the frontend to populate the industry switcher,\nmarket dropdown, and category filters dynamically.",
+        "operationId": "list_industries_api_v1_industries__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response List Industries Api V1 Industries  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/": {
+      "get": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "List Webhooks",
+        "description": "Returns an index of all webhooks owned mechanically by the authenticated user.",
+        "operationId": "list_webhooks_api_v1_webhooks__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WebhookResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Webhooks Api V1 Webhooks  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Create Webhook",
+        "description": "Registers a new active Webhook destination securely tied to the current User's tenant ID.\nThe response payload dictates a generated 'secret_token' so the user can HMAC-verify payloads.",
+        "operationId": "create_webhook_api_v1_webhooks__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/webhooks/{webhook_id}": {
+      "delete": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Delete Webhook",
+        "description": "Safely tears down a user's webhook notification flow based on valid IDs.",
+        "operationId": "delete_webhook_api_v1_webhooks__webhook_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Webhook Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "description": "Check API and database connectivity.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AIBriefingRequest": {
+        "properties": {
+          "industry": {
+            "type": "string",
+            "title": "Industry"
+          },
+          "events": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "industry",
+          "events"
+        ],
+        "title": "AIBriefingRequest"
+      },
+      "AIBriefingResponse": {
+        "properties": {
+          "briefing": {
+            "$ref": "#/components/schemas/ExecutiveBriefing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "briefing"
+        ],
+        "title": "AIBriefingResponse"
+      },
+      "CompetitorAction": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Target competitor entity name (e.g. 'Verizon', 'Domino\\'s')"
+          },
+          "action_type": {
+            "type": "string",
+            "enum": [
+              "Promotion",
+              "Outage",
+              "Acquisition",
+              "Price Change",
+              "Legal",
+              "General"
+            ],
+            "title": "Action Type",
+            "description": "Standardized categorization of what the entity did."
+          },
+          "threat_level": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Threat Level",
+            "description": "Scales how dangerous/impactful this move is to our operations.",
+            "default": 0.5
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Short AI-generated semantic summary of the action."
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "action_type",
+          "summary"
+        ],
+        "title": "CompetitorAction"
+      },
+      "ExecutiveBriefing": {
+        "properties": {
+          "executive_summary": {
+            "type": "string",
+            "title": "Executive Summary",
+            "description": "Paragraph overviewing the broad impact and significance."
+          },
+          "overall_threat_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Overall Threat Score",
+            "description": "Aggregated metric of negative pressure in this market."
+          },
+          "key_opportunities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Key Opportunities",
+            "description": "Bullet points outlining market gaps or promotional opportunities."
+          },
+          "immediate_actions_recommended": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Immediate Actions Recommended",
+            "description": "Tactical next steps for operators based on intelligence."
+          },
+          "market_sentiment": {
+            "type": "string",
+            "enum": [
+              "Bullish",
+              "Bearish",
+              "Volatile",
+              "Stable"
+            ],
+            "title": "Market Sentiment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "executive_summary",
+          "overall_threat_score",
+          "key_opportunities",
+          "immediate_actions_recommended",
+          "market_sentiment"
+        ],
+        "title": "ExecutiveBriefing"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ok"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": "0.2.0"
+          },
+          "database": {
+            "type": "string",
+            "title": "Database",
+            "default": "unknown"
+          }
+        },
+        "type": "object",
+        "title": "HealthResponse",
+        "description": "Health check response for monitoring."
+      },
+      "ImpactEventCreate": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Source",
+            "description": "Adapter that produced this event",
+            "examples": [
+              "open-meteo",
+              "gdelt",
+              "rss",
+              "holiday-api"
+            ]
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id",
+            "description": "Unique ID from the source system for deduplication"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Category",
+            "description": "Primary impact type",
+            "examples": [
+              "weather",
+              "competitor_promo",
+              "holiday",
+              "news",
+              "food_safety"
+            ]
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcategory",
+            "description": "Specific subtype within the category",
+            "examples": [
+              "blizzard",
+              "bogo_deal",
+              "federal_holiday"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Title",
+            "description": "Short human-readable summary"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Detailed context for analysts"
+          },
+          "competitor_actions": {
+            "items": {
+              "$ref": "#/components/schemas/CompetitorAction"
+            },
+            "type": "array",
+            "title": "Competitor Actions",
+            "description": "Structured actions taken by rival competitors within this event"
+          },
+          "severity": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Severity",
+            "description": "Impact magnitude: 0.0 (negligible) to 1.0 (severe)",
+            "default": 0.5
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "Data quality confidence: 0.0 (uncertain) to 1.0 (verified)",
+            "default": 0.5
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date",
+            "description": "When the event started or occurred"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "When the event ended (null = point-in-time)"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "geo_radius_km": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geo Radius Km",
+            "description": "Geographic impact radius in km"
+          },
+          "geo_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geo Label",
+            "description": "Human-readable location name",
+            "examples": [
+              "Detroit",
+              "New York City",
+              "National"
+            ]
+          },
+          "industry": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Industry",
+            "description": "Industry vertical key from the registry",
+            "default": "wireless_retail"
+          },
+          "raw_payload": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Payload",
+            "description": "Original source data preserved for audit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "category",
+          "title",
+          "start_date"
+        ],
+        "title": "ImpactEventCreate",
+        "description": "Schema for creating a new impact event (used by adapters)."
+      },
+      "ImpactEventResponse": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Source",
+            "description": "Adapter that produced this event",
+            "examples": [
+              "open-meteo",
+              "gdelt",
+              "rss",
+              "holiday-api"
+            ]
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id",
+            "description": "Unique ID from the source system for deduplication"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Category",
+            "description": "Primary impact type",
+            "examples": [
+              "weather",
+              "competitor_promo",
+              "holiday",
+              "news",
+              "food_safety"
+            ]
+          },
+          "subcategory": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcategory",
+            "description": "Specific subtype within the category",
+            "examples": [
+              "blizzard",
+              "bogo_deal",
+              "federal_holiday"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Title",
+            "description": "Short human-readable summary"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Detailed context for analysts"
+          },
+          "competitor_actions": {
+            "items": {
+              "$ref": "#/components/schemas/CompetitorAction"
+            },
+            "type": "array",
+            "title": "Competitor Actions",
+            "description": "Structured actions taken by rival competitors within this event"
+          },
+          "severity": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Severity",
+            "description": "Impact magnitude: 0.0 (negligible) to 1.0 (severe)",
+            "default": 0.5
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "description": "Data quality confidence: 0.0 (uncertain) to 1.0 (verified)",
+            "default": 0.5
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date",
+            "description": "When the event started or occurred"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "When the event ended (null = point-in-time)"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "geo_radius_km": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geo Radius Km",
+            "description": "Geographic impact radius in km"
+          },
+          "geo_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geo Label",
+            "description": "Human-readable location name",
+            "examples": [
+              "Detroit",
+              "New York City",
+              "National"
+            ]
+          },
+          "industry": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Industry",
+            "description": "Industry vertical key from the registry",
+            "default": "wireless_retail"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "category",
+          "title",
+          "start_date",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ImpactEventResponse",
+        "description": "Schema for returning an impact event from the API."
+      },
+      "Token": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "token_type"
+        ],
+        "title": "Token"
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserCreate"
+      },
+      "UserLogin": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserLogin"
+      },
+      "UserPreferenceResponse": {
+        "properties": {
+          "default_industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Industry",
+            "default": "wireless_retail"
+          },
+          "default_market": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Market"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme",
+            "default": "dark"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "UserPreferenceResponse"
+      },
+      "UserPreferenceUpdate": {
+        "properties": {
+          "default_industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Industry",
+            "default": "wireless_retail"
+          },
+          "default_market": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Market"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme",
+            "default": "dark"
+          }
+        },
+        "type": "object",
+        "title": "UserPreferenceUpdate"
+      },
+      "UserResponse": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "is_admin": {
+            "type": "boolean",
+            "title": "Is Admin"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "preferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserPreferenceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "id",
+          "is_active",
+          "is_admin",
+          "tier"
+        ],
+        "title": "UserResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WebhookCreate": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 1024,
+            "title": "Url",
+            "description": "The destination HTTPS URL to push alerts."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Name",
+            "description": "Human-readable name for this webhook (e.g., 'Slack #marketing')."
+          },
+          "min_severity": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Min Severity",
+            "description": "Minimum severity threshold to trigger a notification.",
+            "default": 0.7
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether this webhook is currently listening.",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "name"
+        ],
+        "title": "WebhookCreate",
+        "description": "Client request schema to register a new webhook destination."
+      },
+      "WebhookResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 1024,
+            "title": "Url",
+            "description": "The destination HTTPS URL to push alerts."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Name",
+            "description": "Human-readable name for this webhook (e.g., 'Slack #marketing')."
+          },
+          "min_severity": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Min Severity",
+            "description": "Minimum severity threshold to trigger a notification.",
+            "default": 0.7
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Whether this webhook is currently listening.",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "secret_token": {
+            "type": "string",
+            "title": "Secret Token",
+            "description": "HMAC signing secret to verify the payload originated from Remembench."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "name",
+          "id",
+          "user_id",
+          "secret_token",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WebhookResponse",
+        "description": "API response schema returning the webhook configuration including its unique secret."
+      },
+      "YoYComparisonResponse": {
+        "properties": {
+          "current_period": {
+            "$ref": "#/components/schemas/YoYPeriodSummary"
+          },
+          "prior_periods": {
+            "items": {
+              "$ref": "#/components/schemas/YoYPeriodSummary"
+            },
+            "type": "array",
+            "title": "Prior Periods"
+          },
+          "significant_deltas": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Significant Deltas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_period",
+          "prior_periods",
+          "significant_deltas"
+        ],
+        "title": "YoYComparisonResponse",
+        "description": "Full YoY comparison result.\n\nShows the current period alongside one or more prior periods\nso analysts can see what factors were present (or absent)\nlast year that might explain performance differences."
+      },
+      "YoYPeriodSummary": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Period End"
+          },
+          "total_events": {
+            "type": "integer",
+            "title": "Total Events"
+          },
+          "events_by_category": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Events By Category"
+          },
+          "avg_severity": {
+            "type": "number",
+            "title": "Avg Severity"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ImpactEventResponse"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "period_start",
+          "period_end",
+          "total_events",
+          "events_by_category",
+          "avg_severity",
+          "events"
+        ],
+        "title": "YoYPeriodSummary",
+        "description": "Summary of impact events for a single year's period."
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "api/v1/auth/login"
+          }
+        }
+      },
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}

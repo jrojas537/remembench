@@ -107,7 +107,7 @@ PIZZA_GDELT_QUERIES = [
     "sports OR game OR tournament OR marathon OR stadium",
     '"minimum wage" OR "labor shortage" OR "restaurant workers"',
     '"cheese prices" OR "flour prices" OR "food costs" OR "ingredient prices"',
-    '("Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Dominos" OR "Buddy\'s") (promotion OR discount OR launch)',
+    '("Jet\'s Pizza" OR "Pizza Hut" OR "Papa Johns" OR "Dominos" OR "Buddy\'s") (promotion OR discount OR launch)',
 ]
 
 
@@ -161,7 +161,7 @@ CAR_WASH_CATEGORIES = UNIVERSAL_CATEGORIES + [
 ]
 
 PIZZA_CATEGORIES = UNIVERSAL_CATEGORIES + [
-    "competitor_promo", "delivery_disruption", "food_safety",
+    "pizza_promotions", "delivery_disruption", "food_safety",
     "supply_chain", "labor",
 ]
 
@@ -211,7 +211,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "weather": "Weather Impact",
             "holiday": "Holiday",
             "news": "News / Local Event",
-            "competitor_promo": "Competitor Activity",
+            "pizza_promotions": "Competitor Activity",
             "delivery_disruption": "Delivery Disruption",
             "food_safety": "Food Safety / Health",
             "supply_chain": "Supply Chain / Costs",
@@ -219,6 +219,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "local_event": "Local Event / Festival",
             "sports": "Sports / Game",
         },
+        classification_prompt_addition="Be extraordinarily vigilant checking for the following competitor brands: Domino's, Jet's Pizza, Pizza Hut, Papa Johns, and Buddy's Pizza. If they are aggressively promoting discounts, deals, or BOGO offers, or announcing major events, mark it with HIGH severity and ensure it is classified as pizza_promotions.",
     ),
 
     # === PIZZA — FULL SERVICE ===
@@ -236,7 +237,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "weather": "Weather Impact",
             "holiday": "Holiday",
             "news": "News / Local Event",
-            "competitor_promo": "Competitor Activity",
+            "pizza_promotions": "Competitor Activity",
             "delivery_disruption": "Delivery Disruption",
             "food_safety": "Food Safety / Health",
             "supply_chain": "Supply Chain / Costs",
@@ -244,6 +245,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "local_event": "Local Event / Festival",
             "sports": "Sports / Game",
         },
+        classification_prompt_addition="Be extraordinarily vigilant checking for the following competitor brands: Domino's, Jet's Pizza, Pizza Hut, Papa Johns, and Buddy's Pizza. If they are aggressively promoting discounts, deals, or BOGO offers, or announcing major events, mark it with HIGH severity and ensure it is classified as pizza_promotions.",
     ),
 
     # === PIZZA — DELIVERY ===
@@ -261,7 +263,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "weather": "Weather Impact",
             "holiday": "Holiday",
             "news": "News / Local Event",
-            "competitor_promo": "Competitor Activity",
+            "pizza_promotions": "Competitor Activity",
             "delivery_disruption": "Delivery Platform Disruption",
             "food_safety": "Food Safety / Health",
             "supply_chain": "Supply Chain / Costs",
@@ -269,6 +271,7 @@ INDUSTRIES: dict[str, IndustryConfig] = {
             "local_event": "Local Event / Festival",
             "sports": "Sports / Game",
         },
+        classification_prompt_addition="Be extraordinarily vigilant checking for the following competitor brands: Domino's, Jet's Pizza, Pizza Hut, Papa Johns, and Buddy's Pizza. If they are aggressively promoting discounts, deals, or BOGO offers, or announcing major events, mark it with HIGH severity and ensure it is classified as pizza_promotions.",
     ),
 }
 
@@ -339,7 +342,7 @@ def get_web_search_query(industry_key: str, start_date: datetime, end_date: date
     scrapers to hunt for localized holiday promotions natively!
     """
     if industry_key.startswith("pizza"):
-        base_pizza_query = '("Dominos" OR "Little Caesars" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s Pizza" OR "pizza") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "sporting event" OR sports OR game OR playoffs OR tournament)'
+        base_pizza_query = '("Dominos" OR "Jet\'s Pizza" OR "Pizza Hut" OR "Papa Johns" OR "Buddy\'s Pizza" OR "pizza") (promotion OR discount OR deal OR coupon OR BOGO OR offer OR "sporting event" OR sports OR game OR playoffs OR tournament)'
         
         event_prompts = []
         if start_date.month == 1 or end_date.month == 1:

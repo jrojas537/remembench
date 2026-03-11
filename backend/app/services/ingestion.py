@@ -196,16 +196,31 @@ class IngestionService:
                         detailed_impact = details.get("detailed_impact") if isinstance(details, dict) else None
                         ev.description = detailed_impact or summary
                         
-                        # Override default search-bounds with the explicit event_date if the LLM positively identified one
-                        event_date_str = classification.get("event_date")
-                        if event_date_str and isinstance(event_date_str, str) and event_date_str.lower() != "null":
-                            import re
-                            if re.match(r"^\d{4}-\d{2}-\d{2}$", event_date_str):
-                                from datetime import timezone
+                        # Override default search-bounds with explicit start/end dates if the LLM positively identified them
+                        import re
+                        from datetime import timezone
+                        
+                        start_date_str = classification.get("event_start_date")
+                        if start_date_str and isinstance(start_date_str, str) and start_date_str.lower() != "null":
+                            if re.match(r"^\d{4}-\d{2}-\d{2}$", start_date_str):
                                 try:
-                                    parsed_date = datetime.strptime(event_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-                                    ev.start_date = parsed_date
-                                    ev.end_date = parsed_date
+                                    parsed_start = datetime.strptime(start_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                                    ev.start_date = parsed_start
+                                    # Default end_date to start_date, will be overridden below if present
+                                    ev.end_date = parsed_start
+                                except ValueError:
+                                    pass
+                                    
+                        end_date_str = classification.get("event_end_date")
+                        if end_date_str and isinstance(end_date_str, str) and end_date_str.lower() != "null":
+                            if re.match(r"^\d{4}-\d{2}-\d{2}$", end_date_str):
+                                try:
+                                    parsed_end = datetime.strptime(end_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                                    ev.end_date = parsed_end
+                                    # If start_date wasn't updated, leave it as the original search bound 
+                                    # or set it to end_date if it's after end_date
+                                    if ev.start_date > ev.end_date:
+                                        ev.start_date = ev.end_date
                                 except ValueError:
                                     pass
                         

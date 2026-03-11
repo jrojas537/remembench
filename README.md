@@ -31,6 +31,8 @@ By mapping previously abstract data points into hard analytical numbers (e.g. *S
 📖 **Deep Dives:**
 *   [Technical Architecture & LLM Data Flow](ARCHITECTURE.md)
 *   [Developer & Contribution Guide](CONTRIBUTING.md)
+*   [User Guide & Tutorials](docs/USER_GUIDE.md)
+*   [Complete API Reference](docs/API_REFERENCE.md)
 
 ## Supported Industries
 

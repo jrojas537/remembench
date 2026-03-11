@@ -18,9 +18,9 @@ from app.industries import (
     get_all_markets,
     get_gdelt_queries,
     get_rss_feeds,
-    WIRELESS_MARKETS,
+    CAR_WASH_MARKETS,
     PIZZA_MARKETS,
-    WIRELESS_CATEGORIES,
+    CAR_WASH_CATEGORIES,
     PIZZA_CATEGORIES,
     UNIVERSAL_CATEGORIES,
 )
@@ -38,7 +38,7 @@ class TestIndustryRegistry:
 
     def test_all_expected_keys_present(self):
         expected = {
-            "wireless_retail", "pizza_all", "pizza_full_service", "pizza_delivery"
+            "car_wash", "pizza_all", "pizza_full_service", "pizza_delivery"
         }
         assert set(INDUSTRIES.keys()) == expected
 
@@ -73,8 +73,8 @@ class TestIndustryRegistry:
             for cat in UNIVERSAL_CATEGORIES:
                 assert cat in config.categories, f"{cat} missing from {key}"
 
-    def test_wireless_has_outage_category(self):
-        assert "outage" in INDUSTRIES["wireless_retail"].categories
+    def test_car_wash_has_outage_category(self):
+        assert "outage" in INDUSTRIES["car_wash"].categories
 
     def test_pizza_has_food_safety_category(self):
         for key in ("pizza_all", "pizza_full_service", "pizza_delivery"):
@@ -92,18 +92,18 @@ class TestIndustryRegistry:
 class TestMarkets:
     """Verify market definitions."""
 
-    def test_wireless_has_ten_markets(self):
-        assert len(WIRELESS_MARKETS) == 10
+    def test_car_wash_has_ten_markets(self):
+        assert len(CAR_WASH_MARKETS) == 10
 
     def test_pizza_has_ten_markets(self):
         assert len(PIZZA_MARKETS) == 10
 
     def test_all_markets_are_market_objects(self):
-        for m in WIRELESS_MARKETS + PIZZA_MARKETS:
+        for m in CAR_WASH_MARKETS + PIZZA_MARKETS:
             assert isinstance(m, Market)
 
     def test_markets_have_valid_coordinates(self):
-        for m in WIRELESS_MARKETS + PIZZA_MARKETS:
+        for m in CAR_WASH_MARKETS + PIZZA_MARKETS:
             assert -90 <= m.latitude <= 90, f"{m.geo_label} bad lat"
             assert -180 <= m.longitude <= 180, f"{m.geo_label} bad lon"
 
@@ -111,12 +111,12 @@ class TestMarkets:
         labels = [m.geo_label for m in PIZZA_MARKETS]
         assert any("Detroit" in label for label in labels)
 
-    def test_nyc_in_wireless_markets(self):
-        labels = [m.geo_label for m in WIRELESS_MARKETS]
-        assert "New York City" in labels
+    def test_detroit_in_car_wash_markets(self):
+        labels = [m.geo_label for m in CAR_WASH_MARKETS]
+        assert "Detroit Metro" in labels
 
     def test_no_duplicate_market_labels(self):
-        for markets in (WIRELESS_MARKETS, PIZZA_MARKETS):
+        for markets in (CAR_WASH_MARKETS, PIZZA_MARKETS):
             labels = [m.geo_label for m in markets]
             assert len(labels) == len(set(labels)), "Duplicate market labels"
 
@@ -128,8 +128,8 @@ class TestMarkets:
 class TestRSSFeeds:
     """Verify RSS feed definitions."""
 
-    def test_wireless_feeds_have_urls(self):
-        config = INDUSTRIES["wireless_retail"]
+    def test_car_wash_feeds_have_urls(self):
+        config = INDUSTRIES["car_wash"]
         for feed in config.rss_feeds:
             assert isinstance(feed, RSSFeed)
             assert feed.url.startswith("http")
@@ -149,8 +149,8 @@ class TestHelpers:
     """Test the industry registry helper functions."""
 
     def test_get_industry_valid(self):
-        config = get_industry("wireless_retail")
-        assert config.label == "Wireless Retail"
+        config = get_industry("car_wash")
+        assert config.label == "Car Wash"
 
     def test_get_industry_invalid_raises_keyerror(self):
         with pytest.raises(KeyError, match="Unknown industry"):
@@ -158,9 +158,9 @@ class TestHelpers:
 
     def test_get_industry_groups(self):
         groups = get_industry_groups()
-        assert "wireless" in groups
+        assert "car_wash" in groups
         assert "pizza" in groups
-        assert len(groups["wireless"]) == 1
+        assert len(groups["car_wash"]) == 1
         assert len(groups["pizza"]) == 3
 
     def test_get_all_markets(self):
@@ -169,7 +169,7 @@ class TestHelpers:
         assert all(isinstance(m, Market) for m in markets)
 
     def test_get_gdelt_queries(self):
-        queries = get_gdelt_queries("wireless_retail")
+        queries = get_gdelt_queries("car_wash")
         assert len(queries) > 0
         assert all(isinstance(q, str) for q in queries)
 
@@ -186,8 +186,8 @@ class TestHelpers:
 class TestGroupConsistency:
     """Verify industry grouping and labeling."""
 
-    def test_wireless_group_is_wireless(self):
-        assert INDUSTRIES["wireless_retail"].group == "wireless"
+    def test_car_wash_group_is_car_wash(self):
+        assert INDUSTRIES["car_wash"].group == "car_wash"
 
     def test_all_pizza_industries_share_group(self):
         for key in ("pizza_all", "pizza_full_service", "pizza_delivery"):

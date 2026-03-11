@@ -37,7 +37,8 @@ Respond ONLY with a valid JSON object matching this schema, completely unformatt
             "summary": string // Short semantic summary of the action
         }}
     ],
-    "event_date": string // Optional. YYYY-MM-DD. Date the event ACTUALLY happens/happened, overriding the publication date if stated. Do not guess. Set to null if generic.
+    "event_start_date": string, // Optional. YYYY-MM-DD. Start date of the event or promotion if it differs from the publication date. Null if generic.
+    "event_end_date": string // Optional. YYYY-MM-DD. End date of the event or promotion if it is ongoing. Null if it is a single day event.
 }}
 """
 
@@ -95,7 +96,8 @@ Respond ONLY with a valid JSON array containing EXACTLY {len(events_texts)} obje
 The response must be completely unformatted (no markdown blocks like ```json).
 
 Context: The user's active dashboard search window spans from {search_start.date() if search_start else 'unknown'} to {search_end.date() if search_end else 'unknown'}.
-If an event is a generic ongoing coupon or promotion that is ACTIVE during this search window, you MUST set the `event_date` safely within this window so it remains visible to the user, bypassing its original publication date.
+If an event is a generic ongoing coupon or promotion that is ACTIVE during this search window, you MUST set the `event_start_date` and `event_end_date` safely to cover its active period so it remains visible to the user, bypassing its original publication date.
+
 
 Each object in the array must match this schema:
 {{
@@ -112,7 +114,8 @@ Each object in the array must match this schema:
             "summary": string // Short semantic summary of the action
         }}
     ],
-    "event_date": string // Optional. YYYY-MM-DD. Date the event ACTUALLY happens/happened, overriding the publication date if stated. Do not guess. Set to null if generic.
+    "event_start_date": string, // Optional. YYYY-MM-DD. Start date of the event or promotion if it differs from the publication date. Null if generic.
+    "event_end_date": string // Optional. YYYY-MM-DD. End date of the event or promotion if it is ongoing. Null if it is a single day event.
 }}
 """
 
@@ -141,7 +144,8 @@ Each object in the array must match this schema:
                 "summary": str(res.get("summary", "No summary provided by LLM.")),
                 "competitor_actions": res.get("competitor_actions", []),
                 "details": res.get("details", {}),
-                "event_date": res.get("event_date", None)
+                "event_start_date": res.get("event_start_date", None),
+                "event_end_date": res.get("event_end_date", None)
             } for res in results]
             
         except Exception as e:
