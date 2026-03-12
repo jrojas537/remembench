@@ -21,9 +21,12 @@ from sqlalchemy import (
     String,
     Text,
     text,
+    JSON,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+JSONVariant = JSON().with_variant(JSONB, "postgresql")
 
 
 class Base(DeclarativeBase):
@@ -137,11 +140,11 @@ class ImpactEvent(Base):
 
     # --- Audit Trail & Extracted Entities ---
     competitor_actions: Mapped[list[dict] | None] = mapped_column(
-        JSONB, nullable=True,
+        JSONVariant, nullable=True,
         comment="Extracted CompetitorAction structured entities arrays",
     )
     raw_payload: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True,
+        JSONVariant, nullable=True,
         comment="Complete source data preserved for audit and debugging",
     )
     created_at: Mapped[datetime] = mapped_column(

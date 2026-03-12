@@ -21,13 +21,22 @@ class AnthropicClient(BaseLLMClient):
             # Prefill the assistant's response to force pure JSON output without markdown blocks
             prefill_char = "[" if "JSON array" in system else "{"
             messages.append({"role": "assistant", "content": prefill_char})
+        # Implement Prompt Caching for the system prompt
+        system_with_cache = [
+            {
+                "type": "text",
+                "text": system,
+                "cache_control": {"type": "ephemeral"}
+            }
+        ]
             
         response = await self.client.messages.create(
             model=self.model,
             max_tokens=4096,
             temperature=0.0,
-            system=system,
-            messages=messages
+            system=system_with_cache,
+            messages=messages,
+            extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}
         )
         
         text = response.content[0].text
